@@ -1,0 +1,15 @@
+<div>
+	<img class="guido.png center" src="#">
+	<p class="app_title center">Example App</p>
+	<p>&nbsp;</p>
+	<p><a href=javascript:void(0) onClick="guidoLoadLayout('first', 'example1');">Layout <i>first</i>,<br>section <i>example1</i> (form)</a></p>
+	<p><a href=javascript:void(0) onClick="guidoLoadLayout('first', 'example2');">Layout <i>first</i>,<br>section <i>example2</i> (table)</a></p>
+	<p><a href=javascript:void(0) onClick="guidoLoadSection('example3');">Section <i>example3</i> (spinner)</a></p>
+	<p><a href=javascript:void(0) onClick="guidoLoadSection('example4');">Section <i>example4</i> (modal)</a></p>
+	<p>&nbsp;</p>
+	<p>Change language: <br>
+		<a href=javascript:void(0) onClick="guidoTranslateDom('bg_BG');">bg_BG</a> :: 
+		<a href=javascript:void(0) onClick="guidoTranslateDom('en_US');">en_US</a> ::
+		<a href=javascript:void(0) onClick="guidoTranslateDom('fr_FR');">fr_FR</a>
+	</p>
+</div>

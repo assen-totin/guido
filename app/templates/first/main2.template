@@ -1,0 +1,6 @@
+<div>
+	<p class=section_title>Example Table</p>
+	<p>(template <i>main2</i>)</p>
+	<p>Use the arrows to sort table. Black arrow shows current sort.</p>
+	<div id="main2_table"></div>
+</div>

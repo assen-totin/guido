@@ -1,0 +1,42 @@
+<html>
+	<head>
+		<!--  Load GUIdo config -->
+		<script src=app/conf/guido.conf.js></script>
+		<script src=app/conf/app.conf.js></script>
+		<!--  Load GUIdo (not minified) -->
+		<script src=guido/js/form.js></script>
+		<script src=guido/js/table.js></script>
+		<script src=guido/js/gettext.js></script>
+		<script src=guido/js/image.js></script>
+		<script src=guido/js/logger.js></script>
+		<script src=guido/js/unzip.js></script>
+		<script src=guido/js/ls.js></script>		
+		<script src=guido/js/util.js></script>
+		<script src=guido/js/guido.js></script>
+	</head>
+
+	<body leftmargin=0 topmargin=0 marginwidth=0 marginheight=0>
+		<!-- Layout root attachment point -->
+		<!-- ID should be 'guido_XYZ' where XYZ is the entry template name in each layout -->
+		<!-- Class should be the same as ID because it is used in layout switching -->
+		<div id=guido_root1></div>
+		<div id=guido_root2></div>
+
+		<!-- AJAX modal DIV -->
+		<div class="table-modal invisible abs">
+			<div class="table-row">
+				<div class="table-cell-left invisible"></div>
+				<div class="table-cell-right modal" id="modal_contents"></div>
+			</div>
+		</div>
+
+		<!-- Run the main GUIdo app -->
+		<script language=javascript>			
+			var listener = document.addEventListener( "DOMContentLoaded", function(){
+    			document.removeEventListener( "DOMContentLoaded", listener, false );
+    			guidoMain();
+    		}, false );
+		</script>
+	</body>
+</html>
+

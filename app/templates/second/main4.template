@@ -1,0 +1,4 @@
+<div>
+	<p>Template <b>main4</b></p>
+	<p><a href=javascript:void(0) onClick=appShowModal();>Click here</a> to show modal dialogue</p>
+</div>

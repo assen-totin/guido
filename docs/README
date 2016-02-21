@@ -1,0 +1,341 @@
+ABOUT GUIDO
+==============
+
+Guido is a framework to help you create simple, small, fast, self-sufficient applications for web. It is centered around the paradigm of desktop programming (layout/section/template hierarchy).
+
+It is simple, because it make you think about what you are going to show (layout) and not about how you are going to show it (models, views, controlles and other useless stuff).
+
+It is fast, because it takes extra care to optimise its bundling requiring just a few files to load. Guido uses its own smart minification and compression on top of it. 
+
+It is self-sufficient, because it has no external dependencies. It does bundle jQuery, but this is more for yourconvenience than for its own. 
+
+Guido uses Javascript, HTML, CSS. Guido apps can easily be localise duing the industry-standard Gettext. 
+
+
+APP STRUCTURE
+=============
+
+The applicaitn consist of the follwing directories: 
+/guido: the Guido framework as a drop-in.
+/app: all application dirctories as described below. 
+
+
+CONFIGURING WEB SERVER
+======================
+
+Guido uses web-server configuration to ensure the browser properly handles both page refreshes and loading from a direct URL. The sampel applicaitn provides confg files for Apache HTTPd and for Nginx. In both cases, guido will set a cookie which name must match the cookie name in the guido.conf file (so change it on both places if needed).
+
+
+CONFIGURING GUIDO
+====================
+
+Guido app starts with two config files, which contain Javascript object declarations. They both reside in the /app/conf directory: 
+
+- guido.conf sets values for some pre-defined options and, most importantly, defines the layout of the app (see below for details). A suitable template for you to edit and modify comes with Guido sample app - check it, it is heavily documented inside. 
+
+- app.conf is initially empty. You can put whatever you app needs there as config (e.g., you'd usually put some connection infomration to rech the backend API that feeds data to the app).
+
+Upon launch, Guido will translate these two config files into two global objects, guidoConf and appConf. 
+
+
+UI HIERARCHY ELEMENTS
+=====================
+
+Guido uses the following tersm when referring to UI hierarchy elements: 
+- Layout: a major part of the application, wrapping common working scenarios (e.g., public interface, admin panel). A simple app will only have one layout. 
+- Section: a screen inside of a layout (much like a web page). Clicking a button/link/menu in the app moves you between screens. 
+- Template: an HTML <DIV> with certain elements inside. Each section consists of one or more templates, loaded automatically side by side or on top of each other.
+
+All UI components are pre-loaded when application starts and stored in the Guido runtime object.
+
+
+LAYOUTS
+=======
+
+Layouts are defined in guido.conf as objects with the top-level key 'layouts'. The name of the layout is used as first-level key. Second-level keys are the names of the sections wit two special names being reserved: 
+_root contains the name of the first template from which the building of the layout begins. The root template will normally be empty with hooks for all other templates which should be loaded at this level. 
+_section contains the name of the default section to load for this layout.
+
+If you want to run some code when a layout is loaded, for a layout named xxx create a funciton named appLoadLayout_xxx() and it will be executed automaticaly when the layout is loaded. To do the same when a layout is unloaded create a function named appUnloadLayout_xxx().
+
+To switch a layout, call the function guidoLoadLayout(layout, section) and provide the name of the layout to load and the name of the section inside it to go to. Guido will unload the currentlayout (calling only its unload hook) and will load the new layout (calling its load hook), then the selected section of the new layout (calling ist load hook), then will cascadingly load all templates (callin the load hook of each template). 
+
+
+SECTIONS
+========
+
+Sections are second-leve objects inside the layout object. Each section consists of a text title (will be show as page title) and an array of all templates which comprise the section (ordering inside the array does not matter; see below for automatic template cascading). 
+
+If you want to run some code when a layout is loaded, for a section named xxx create a funciton named appLoadSection_xxx() and it will be executed automaticaly when the layout is loaded. To do the same when a section is unloaded create a function named appUnloadSection_xxx().
+
+To switch to another section in current layout, call guidoLoadSection(section) and provide the name of the section which should belong to current layout. Guido will unload only those teplates which are not present in the new section (calling their unload hooks), then will call the unload hook of the old section, the load hook of the new section and will load the templates in the new section which were not present in the old onw (calling their load hooks).
+
+
+TEMPLATES
+=========
+
+Templates are text files with a single HTML <DIV> inside them. The name of the file is the name of the template. File names should end with '.template'. 
+
+The template should reside in the /app/templates folder. Use hierarchy layout with the following order: /app/templates/LAYOUT_NAME/SECTION_NAME/TEMPLATE_NAME.tempale. For file names, only use ASCII letters, numbers and the underscore sign. If not using the ZIP file option in guido.conf, list all images with their full path in the by their name in the /app/templates/guido.index file. 
+
+Guido features automated template cascading by their ID: if template A has <div id=aaa>...</div> and template B has a DIV <div id=guido_aaa></div>, then template A will be loaded inside this DIV. All you have to do is give proper IDs, file names and list the two templaes in the appropriate section inside guido.conf. 
+
+If you want to run some code when a layout is loaded, for a template named xxx create a funciton named appLoadTemplate_xxx() and it will be executed automaticaly when the template is loaded. To do the same when a template is unloaded create a function named appUnloadTemplate_xxx().
+
+
+JAVASRIPT
+=========
+
+Put all your custom functions in the /app/js folder. You can use either flat or hierarchy layout (same as in the /app/templates forlder). For file names, only use ASCII letters, numbers and the underscore sign. If not using the ZIP file option in guido.conf, list all images with their full path in the by their name in the /app/js/guido.index file. 
+
+It is a good idea to have all your function names start with 'app', much like the above mentioned appLoadSection_xxx() etc.
+
+Guido will pre-load all the Javascript files, making their public functions globally available. 
+
+
+FORMS
+=====
+
+Guido comes with a form creation and management engine. 
+
+To create a form, instantiate guidoForm() and pass it two parameters: an object to build the form from and a callback, which will be called when the user presses the Submit button.
+
+The parameters object has the following structure:
+params = {
+	id: '',								// The ID of the form. Optional (a random one will be generated if missing).
+	fields: {
+		some_field: {
+			type: enum,					// Field type: INPUT, TEXTAREA, SELECT, CHECKBOX, RADIO, BUTTON, TEXT
+			order: int,					// Fields are ordered by this field
+			enabled: bool,				// Render or not the field. Optional. Default true
+			label: '',					// Label to display before the field. Optional.
+			value: null,				// For internal use; do not read, set or modify this property directly.
+			attributes: {},				// Any HTML attributes for this type of field; 
+										// Do NOT use the 'value' or 'checked' attributes as they will be ignored; use the 'extra' propery below for this.
+										// Certain attributes must always be supplied, e.d. 'name'; other become mandatory depending on field type
+			extra: {},					// Object with type-specific extra options, e.g. 
+										// - for SELECT: options=[{value:'',text:''}], selected='value', sort='asc'|'desc', comparator=function (optional)
+										// - for RADIO: options=[{value:'',text:''}], selected='value'
+										// - for CHECKBOX: selected=bool
+										// - for TEXTAREA: text=''
+										// - for BUTTON: text='', action=function() || ''
+										// - for INPUT: text='', submitOnEnter=bool
+										// - for INPUT with multiField: text=['',]
+										// - for TEXT: text=''
+			cssField: '' || ['',],		// CSS class(es) which will be applied to the field's own DIV (each field is rendered in itw own DIV). Optional.
+			cssLabel: '' || ['',],		// CSS class(es) which will be applied to the field's label (if such is defined). Optional.
+			cssInput: '' || ['',],		// CSS class(es) which be applied to the input's wrapping <span>. Optional.
+										// If you want the <input> to inherit certain properties, define them explictly in your CSS.
+			divId: '',					// The ID of the div that contains the field; for internal use only, do not set or modify this property.
+			multiField: bool,			// For INPUT only: if true, a button to add more fields like this will be displayed next to the first one.
+										// The values of all inputs will be returned in an array.   
+			onChange: function() || ''	// A function to be invoked if the contents of the field changes 
+										// (name or inline - avoid inline as some browsers don't like it.).
+			validator: {							// Validator object for this field. Optional.
+				enabled: bool,						// Enable or disable validation of the field. Optional. Default true.
+				error: ''							// Error message in case validation has failed.
+				validate: function() || '' || []	// Function or name of internal validator or array of names of internal validators.
+											// NB! The external validation function for a field receives the field's value as argument 
+											// and *must* return TRUE if validation passes! 
+											// Every FALSE value till be considered failure and callback will be invoked with the field as error!
+			},
+			getAsString: bool,			// Force the value of the field to be returned as string even if it is a number.
+		},
+		...
+	},
+	validator: {				// Validator object for the form. Optional.
+		enabled: bool,			// Enable or disable validation of the form. Optional. Default true.
+		error: ''				// Error message in case validation has failed.
+		validate: function()	// External validation function. Default: use internal validator (valdiate all fields by their validators).
+								// NB! The external validation function for the form receives the form's object as argument  *must* return FALSE if validaiton passed! 
+								// Every TRUE value till be considered failure and will be passed back to the callback as error!
+	},
+	css: [],		// CSS classes that will be applied to the form. Optional.
+	div: '',		// The ID of the DIV where to render the form. Optional. If missing, the form will not be rendered, so call .render() manually 
+					// with a DIV as param to render it or without argument to obtain the form's HTML.
+	exec: [] || ''	// Name or aray of names of functions to execute when the form is rendered.
+}
+
+The callback function has the following prototype:
+function(error, result);
+
+- If the error object is true, it will contain the first field element that has failed validaiton. 
+- If the error object is false, the result object will contain the form's data in key:value format, ready to be fed to jQuery's ajax() method. 
+
+Field types:
+- INPUT: creates an INPUT field. You must supply at least name=XXX and type={text|password|hidden} in 'attributes' property. Do NOT use type=submit; use BUTTON field instead.
+- TEXTAREA: creates an TEXTAREA field. You must supply at least name=XXX in 'attributes' property. To set text inside the area, supply text=XXX in 'extra' property
+- CHECKBOX: creates a CHECKBOX field. You must supply at least name=XXX in 'attributes' property. No need to suppliy type=checkbox. If you want the checkbox checked, supply smth=['checked'] in 'attributes' property. 
+- SELECT: creates a SELECT field. You must supply at least name=XXX in 'attributes' property. Options are supplied as array of objects in the 'extra' property; each of them must have a property 'value' (the value of the option in HTML sense) and a 'text' property (visible in the drop-down on screen). To have an option selected, send its value in the 'default' property of the 'extra' property.
+- RADIO: creates radio buttons from a single field. You must supply at least name=XXX in 'attributes' property. No need to suppliy type=radio. Options are supplied as array of objects in the 'extra' property; each of them must have a property 'value' (the value of the option in HTML sense) and a 'text' property (shown as label after the radio button). To have an option selected, send its value in the 'default' property of the 'extra' property.
+- BUTTON: creates an BUTTON field. You must supply at least type=button in 'attributes' property. To set the text of the button, supply text=XXX in 'extra' property. Do NOT use type=submit as browsers may try to submit and/or re-render the page! If you want the button to have its own custom function, supply it (or, better, its name) in the extra.action property; to process the form, use the special built-in funciton 'submit'.
+- TEXT: displays a free text instead of a form field. Supply the text in the extra.text property.
+
+If a field is not explicitly disabled, it will be visible (and validated). To change visibility of a field, call the setEnabled(id, true|false) method, where 'id' is the value of the 'id' attribute in 'attributes' property. 
+
+Any field with a validator must have a value. If the field contains a string, it will be trimmed before validation. The following internal validators are available:
+- 'integer': the field must contain an integer.
+- 'float': the field must contain an float or integer.
+- 'positive': the field must contain a positive number.
+- 'non-negative': the field must contain a non-negative number.
+- 'negative': the field must contain a negative number.
+- 'notempty': the field must not be empty.
+- 'alphanumeric': the field must only contain alphanumeric characters (letters and/or numbers only)
+
+The field value will be returned either as a number (if it contains only digits and a up to a single dot), or as a string. f you want to force a field to always return a sring, set the .getAsString property of the field.
+
+TABLES
+======
+
+Guido comes with a table creation and management engine. 
+
+To create a table, instantiate guidoTable() and pass it two parameters: an object to build the table from and a callback, which will be called when rendering completes.
+
+The parameters object has the following structure:
+
+var params = {
+	id: '',							// The ID of the table. Optional (a random one will be generated if missing).
+	div: '',						// The ID of the DIV where to render the form. Optional. If missing, the form will not be rendered, 
+									// so call .render() manually - with a DIV as param to render it or without argument to obtain the form's HTML.
+	exec: [] || ''					// Name or aray of names of functions to execute when the form is rendered.
+	css: [],						// CSS classes that will be applied to the table. Optional.
+	sort: 0,						// The ID of the column to sort by (leftmost is 0)
+	direction: 'asc',				// Direction of sort ('asc' or 'desc').
+	comparator: Function			// Comparator funciton to use when sorting (optional; default: autodetect)
+	sortControls: {					// Define how the sorting controls will look like (globally for all sorts). First two are to change sort, last two display current sort:
+		sortAsc: '',				// - If an entity is HTML, it will be rendered 'as-is'. Thsu you can specify your own symbools, images etc. 
+		sortDesc: '',				// - If an entity has the value of 'guido', the built-in Guido font will be used for control. Size will match the font size of the cell.
+		sortedAsc: '',				// - If an entity has any other value, it will be applied to standard controls as CSS. Thus you can specify custom font and size.
+		sortedDesc: '',				// - If an entity is empty, no style will be applied and the font for the header will be used to render the controls. 
+	},
+
+	page: int, 						// Size of the page in rows. Set to 0 or leave out to disable pagination.
+	pageConrols: {					// Define whether pagination will be used and how it will look. 
+		position: [], 				// Locations where to show pagination controls, one or more of 'top', 'bottom'.
+		align: [], 					// Alignment of pagination controls, one or more of 'left', 'right'.
+		css: [],					// CSS classes to apply to pagination controls (will NOT inherit the CSS of the table!)
+	},
+
+	header: {						// Header row object
+		id: '',						// The ID of the header row. Optional (a random one will be generated if missing).
+		css: [],					// CSS classes that will be applied to the header row. Optional.
+		cells: [					// Array of cells object in the header.
+			{
+				id: '',				// The ID of the cell. Optional (a random one will be generated if missing).
+				css: [],			// CSS classes that will be applied to the cell. Optional.
+				enabled: true,		// Whether to render the column or not (default: true).
+				sort: true,			// Allow sorting by this column (and show arrows to do so). Default: false.
+				sortControls: {		// Same as above, but locally for this cell. Overrides the global settings for the cell.
+					sortAsc: '',	
+					sortDesc: '',	
+					sortedAsc: '',	
+					sortedDesc: '',	
+				},
+				content: '',		// Cell's content.
+			},
+			// ...
+		],	
+	},
+
+	rows: [							// Array of table's rows objects
+		{
+			id: '', 				// The ID of the row. Optional (a random one will be generated if missing).
+			enabled: true,			// Whether to render the row or not (default: true).
+			css: [],				// CSS classes that will be applied to the header row. Optional.
+			rowspan: 0,				// Row span (optional if 0)
+			htmlPost: '', 			// HTML to inject after closing of the row (useful to inject a row that will emain after the current one despite sorting)
+			cells: [				// Array of cells` objects in the row
+				{
+					id: '',			// The ID of the cell. Optional (a random one will be generated if missing).
+					css: [],		// CSS classes that will be applied to the cell. Optional.
+					colspan: 0,		// Column span (optional if 0)
+					content: '',	// Cell's content.
+				},
+				// ...
+			],
+		},
+		// ...
+	]
+}
+
+
+IMAGES
+======
+
+The images should reside in the /app/images folder. Use flat layout (i.e. put all images in this directory). For file names, only use ASCII letters, numbers and the underscore sign. If not using the ZIP file option in guido.conf, list all images by their name in the /app/images/guido.index file. 
+
+When using images with Guido, use the standard <img> tag, but set the source to "#" and the class to the name of the file (including its extension). When done setting up a section, just call guidoRenderImages(). 
+
+
+STYLESHEETS
+===========
+
+Stylesheets should reside in the /app/css folder. Use flat layout (i.e. put all images in this directory). For file names, only use ASCII letters, numbers and the underscore sign. If not using the ZIP file option in guido.conf, list all stylesheet files by their name in the /app/css/guido.index file. 
+
+Guido will automatically load all stylesheets upload start-up.
+
+
+FONTS
+=====
+
+Guido gives you the ability to bundle fonts with you application. Simply put the fonts in the /app/fomts folder. Gudo will load them and make them available to use in your stylesheets.
+
+The font file should be named following a particular convention: the file name should consist of the face name, style name and weight, separated by dashes. The file extension should be lowercase and match the file type, e.g.: myfont-regular-500.ttf.  For font face name, only use ASCII letters, numbers and the underscore sign (it should not contain dashes, but you can replace them with underscores).
+
+
+LOCALISATION
+============
+
+Guido implements full l10n support using the industry-standard Gettext. When a locale is refered below, it should always be in the xx_YY format, where xx is the two-letter language code and YY is the two-letter country code.   
+
+To use localisation with Guido: 
+- Prepare a template (POT) file by running the gettext.js script from the /guido/bin directory. You need to run it from inside the directory. It will create a /app/locale/master.pot file. 
+- Put the translated PO files in /app/locale. 
+- Set the desired initial locale in guido.conf file.
+
+Hints for preparing translatable text:
+- In your templates, always surround transatable text with HTML tags, e.g. <p></p> or <span></span> etc.
+- Avoid mutiple spaces and tabs, as gettext will pick them literally, but the browser will ender them as single space, thus breakign your localisation. 
+- In your Javascript files, always put the translatable text in the _() function. It will simply return your original text, but its presence allows gettext to distinguish between translatable text and other free text when preparing the master POT file. 
+
+At any moment you can switch your app to another language. Just call the guidoTranslateDom(locale) function and supply it the desired locale name. Guido will do the rest.
+
+To make localisation faster and to save time and bandwidth, Guido caches the locale data one it has been retrieved. If you switch to a locale that has once been used, the cached locale data will be used. The cache lives in memory only, so closing the app (i.e. the browser window) will remove it.     
+
+To disable localisation, just set the locale in guido.conf to empty string. 
+
+
+STATE AND LOCAL STORAGE
+=======================
+
+The state in Guido is represented by the appRun object. It is initialised when Guido starts and is globally available. You can use it as a storage for data which needs to persist between sections. 
+
+Guild has several helper funcitons to work with the state object: 
+- guidoLsSave() will save the state object to the browser's Local Storage. Functions you may have in the state object will be skipped.
+- guidoLsLoad() will load the state object from the browser's Local Storage. Existing functions in the state object will be preserved. To make the restoration conditional (e.g., only when the app version number is the same), pass a property and its value or an object; if the sate object has this property and its value matches or if the state object contains the supplied object (with the values of all properties matching), then it will be restored and used. 
+- guidoLsClear() will remove the stat eobject from the Local Storage. 
+
+Call guidoLsSave() every time you modify the state object. Call guidoLsLoad() in your layout's initialisation function appLoadLayout_XYZ().
+
+You can also use two more helper methods to work with the Local Storage:
+- guidoLsSet(key, value) will store the key:value pair in the browser's Local Storage. 
+- guidoLsSet(key) will return the value, referenced by key, from in the browser's Local Storage.
+
+These two functions create unique keys so that the data will not be accidentally overwritten by another app. 
+
+
+DEPLOYING GUIDO
+===============
+
+You can deploy Guido two ways: uncompressed or compressed. Set the 'zip' value accordingly in your app/conf/guido.conf file.  
+
+Uncompressed deployment is better suited for development and pre-production testing. In this case all files (templates, CSS etc.) are loaded one by one. To load JS scripts, templates and CSS from the app, each subdirectory (app/js, app/css, app/templates) must contain a file named guido.index. Each guido.index should list all the files to load starting from current directory. Files should be listed once per line. Empty lines and lines starting with # are ignored. Guido can generate this index for you - just go to guido/bin and gun 'node guido.js'. You can always modify the index files later if needed. 
+
+Compressed deployment is best suited for production environments as the whole application is compressed into a single ZIP file, making it for the fastest and most efficient loading. To generate the ZIP file, just go to guido/bin and gun 'node guido.js'. In addition, Guido will detect JavaScript files and will minify them by removing blank lines, commented lines and newline symbols before compressing.  
+
+
+APP START-UP
+============
+
+When the app starts up, it will load all templates and images into memory; it will also execute once all javascript files. It will then load the default layout and section as specified in the guido.conf file, calling all the hooks for layout, section and templates. It will traverse the resulting DOM tree with Gettext, updating strings to the default locale. Finally, it will call the appMain() function.
+

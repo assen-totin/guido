@@ -1,0 +1,126 @@
+/* TABLE LAYOUT */
+
+.table-main, .table-modal {
+	display: table;
+	height: 100%;
+	width: 100%;
+	border-spacing: 20px;
+}
+
+.table-row {
+	display: table-row;
+}
+
+.table-cell-left {
+	display: table-cell;
+	background-color: #F0F0F0;
+	width: 25%;
+	height: 100%;
+	border-radius: 20px; 
+	border: 1px solid; 
+	border-color:#C0C0C0; 
+	padding:20px; 
+	vertical-align: top;
+}
+
+.table-cell-right {
+	display: table-cell;
+	border-radius: 20px; 
+	border: 1px solid; 
+	border-color:#C0C0C0; 
+	padding:20px;
+}
+
+/* MODAL */
+
+.invisible {
+	visibility: hidden;
+}
+
+.abs {
+	position: absolute;
+	left: 0px;
+	top: 0px;
+	bottom: 0px;
+	z-index:1000;
+}
+
+.modal {
+	background-color: rgba(128,128,128,0.8);
+	vertical-align: middle;
+	text-align: center;
+}
+
+/* FORMATTING */
+
+/* Make the form element inherit from their wrapping span */
+input, select, textarea, checkbox, button {
+	font-family: inherit;
+	font-size: inherit;
+	font-style: inherit; 
+	color: inherit;
+}
+
+p {
+	font-family: OpenSans;
+	font-weight: normal;
+	font-size: 16px;
+}
+
+.center {
+	display: block;
+	text-align: center;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.app_title {
+	font-size: 20px;
+	font-weight: bold;
+}
+
+.section_title {
+	font-size: 18px;
+	font-weight: bold;
+}
+
+.form {
+	font-family: OpenSans;
+	font-size: 14px;
+}
+
+.form_div {
+	padding: 5px;
+	vertical-align: middle;
+	font-weight: bold;
+}
+
+.form_input, .form_select, .form_radio, .form_checkbox, .form_button {
+	font-family: OpenSans;
+	font-size: 14px;
+	color: green;
+}
+
+.table {
+	width: 400px;
+	border: 1px solid black;
+	font-family: OpenSans;
+	font-size: 14px;
+}
+
+.th {
+	font-weight: bold;
+	text-align: center;
+	background: #88CC88;
+}
+
+.numeric {
+	text-align: right;
+}
+
+.page {
+	font-family: OpenSans;
+	font-weight: normal;
+	font-size: 14px;
+}
+

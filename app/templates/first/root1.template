@@ -1,0 +1,11 @@
+<div class="table-main">
+	<div class="table-row">
+		<div class="table-cell-left" id="guido_menu1">
+		</div>
+		<div class="table-cell-right" id="none">
+			<div id="guido_main1"></div>
+			<div id="guido_main2"></div>
+		</div>
+	</div>
+</div>
+

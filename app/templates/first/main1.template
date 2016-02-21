@@ -1,0 +1,6 @@
+<div>
+	<p class=section_title>Example Form</p>
+	<p>(template <i>main1</i>)</p>
+	<p>Use <i>Select 1</i> to change the values in <i>Select 2</i>; use <i>Checkbox</i> to show/hide a conditional field.</p>
+	<div id="main1_form"></div>
+</div>
