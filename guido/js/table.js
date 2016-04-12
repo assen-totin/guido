@@ -583,7 +583,7 @@ guidoTable.prototype.getPageControls = function() {
 	html += '</td></tr>';
 
 	return html;
-}
+};
 
 if (typeof module !== 'undefined' && typeof module.exports !== 'undefined')
     module.exports = guidoTable;
