@@ -21,6 +21,10 @@
  */
 
 function guidoLogger(params) {
+	var fs = null;
+	if (typeof module !== 'undefined' && typeof module.exports !== 'undefined')
+		fs = require('fs');
+
 	// Define log levels
 	this.LOG_LEVEL_NONE = 0;
 	this.LOG_LEVEL_CRITICAL = 1;	// Also known as LOG_LEVEL_FATAL
@@ -41,6 +45,9 @@ function guidoLogger(params) {
 	
 	// Logging prefix
 	this.app_name = params.app_name || "UNSPECIFIED SERVICE";
+
+	// HTTP log file location
+	this.http_log = params.http_log || "/tmp/http.log";
 
 	this.format_date = function() {
 		var d = new Date();
@@ -101,4 +108,26 @@ function guidoLogger(params) {
 			// All other messages go to output log only
 			console.log(err_msg);
 	};
+
+	this.http = function(message) {
+		// Protect from non-nodeJS usage
+		if (! fs)
+			return;
+
+		var tstamp = this.format_date();
+
+		var msg = tstamp + '[' + this.app_name + ']' + message + "\n";
+
+		var self = this;
+
+		fs.appendFile(self.http_log, msg, function (error) {
+			if (error)
+				self.critical("Unable to write to HTTP log file");
+		});
+	};
 };
+
+
+if (typeof module !== 'undefined' && typeof module.exports !== 'undefined')
+    module.exports = guidoLogger;
+

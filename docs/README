@@ -20,10 +20,17 @@ The applicaitn consist of the follwing directories:
 /app: all application dirctories as described below. 
 
 
-CONFIGURING WEB SERVER
-======================
+WEB SERVER
+==========
 
-Guido uses web-server configuration to ensure the browser properly handles both page refreshes and loading from a direct URL. The sampel applicaitn provides confg files for Apache HTTPd and for Nginx. In both cases, guido will set a cookie which name must match the cookie name in the guido.conf file (so change it on both places if needed).
+As a wen application, Guido needs to be served by a web server. You have three choices: 
+- Internal web server
+- Apache httpd
+- Nginx
+
+The internal web server is a small, tailored one that is specifically designed to serve Guido. It is not a general-purpose web server and has rather limited funcitonality. Its main advantage is that is lightweigh and fast. It is written in Javascript and needs Node.js or a similar Javascrupt virtual machine to run. It is not a daemon, so you'll need to start it from a supervisor like init, systemd or supervisord. It will read all the configuration it needs from the app/conf/webserver.conf.js file and also from app/conf/guido.conf.js file. Use the first to set the TCP port to listen at (remember taht ports up to 1024 require super-user privileges).
+
+For Apache httpd and Nginx, Guido provides ready-to-use configuration files to ensure the browser properly handles both page refreshes and loading from a direct URL. In both cases, Guido will set a cookie which name must match the cookie name in the guido.conf file (so change it on both places if needed).
 
 
 CONFIGURING GUIDO
