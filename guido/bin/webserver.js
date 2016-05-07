@@ -120,10 +120,10 @@ var server = http.createServer(function(request, response) {
 		switch(extension) {
 			case 'txt':
 			case 'index':
-				return 'text/plain';
+			return 'text/plain; charset=utf-8';
 			case 'htm':
 			case 'html':
-				return 'text/html';
+			return 'text/html; charset=utf-8';
 			case 'css':
 				return 'text/css';
 			case 'js':

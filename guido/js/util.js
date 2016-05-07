@@ -383,4 +383,18 @@ function guidoTablePage(tableId, page) {
 	appRun.tables[tableId].render();
 };
 
+/**
+ * Extract File object from file form field (global function for forms)
+ * @param event Event The file changed event
+ */
+function guidoFormGetFile(event) {
+	// Save the whole event so that we may use it later to upload the file
+	var keys = Object.keys(appRun.forms[event.target.form.id].fields);
+	for (var i=0; i<keys.length; i++) {
+		if (appRun.forms[event.target.form.id].fields[keys[i]].attributes.id == event.target.id) {
+			appRun.forms[event.target.form.id].fields[keys[i]].eventChangeFile = event;
+			break;
+		}
+	}
+};
 

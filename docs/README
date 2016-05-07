@@ -112,7 +112,7 @@ params = {
 	id: '',								// The ID of the form. Optional (a random one will be generated if missing).
 	fields: {
 		some_field: {
-			type: enum,					// Field type: INPUT, TEXTAREA, SELECT, CHECKBOX, RADIO, BUTTON, TEXT
+			type: enum,					// Field type: INPUT, TEXTAREA, SELECT, CHECKBOX, RADIO, BUTTON, TEXT, FILE
 			order: int,					// Fields are ordered by this field
 			enabled: bool,				// Render or not the field. Optional. Default true
 			label: '',					// Label to display before the field. Optional.
@@ -154,7 +154,7 @@ params = {
 		enabled: bool,			// Enable or disable validation of the form. Optional. Default true.
 		error: ''				// Error message in case validation has failed.
 		validate: function()	// External validation function. Default: use internal validator (valdiate all fields by their validators).
-								// NB! The external validation function for the form receives the form's object as argument  *must* return FALSE if validaiton passed! 
+								// NB! The external validation function for the form receives the form's object as argument  *must* return FALSE if validation passed! 
 								// Every TRUE value till be considered failure and will be passed back to the callback as error!
 	},
 	css: [],		// CSS classes that will be applied to the form. Optional.
@@ -177,6 +177,7 @@ Field types:
 - RADIO: creates radio buttons from a single field. You must supply at least name=XXX in 'attributes' property. No need to suppliy type=radio. Options are supplied as array of objects in the 'extra' property; each of them must have a property 'value' (the value of the option in HTML sense) and a 'text' property (shown as label after the radio button). To have an option selected, send its value in the 'default' property of the 'extra' property.
 - BUTTON: creates an BUTTON field. You must supply at least type=button in 'attributes' property. To set the text of the button, supply text=XXX in 'extra' property. Do NOT use type=submit as browsers may try to submit and/or re-render the page! If you want the button to have its own custom function, supply it (or, better, its name) in the extra.action property; to process the form, use the special built-in funciton 'submit'.
 - TEXT: displays a free text instead of a form field. Supply the text in the extra.text property.
+- FILE: displays a file selection dialogue. Once for element are retrieved, this field will return the full change object from the onChange event, associated with the file selection dialogue. Inside its properties you can access the list of file enries and either set a FileReader on each of them, or use a FormData instance for uploading the file's content.
 
 If a field is not explicitly disabled, it will be visible (and validated). To change visibility of a field, call the setEnabled(id, true|false) method, where 'id' is the value of the 'id' attribute in 'attributes' property. 
 

@@ -271,15 +271,15 @@ guidoTable.prototype.renderCell = function (cell, columnId) {
 	if (cell.sort) {
 		// ASC
 		if ((this.sort == columnId) && (this.direction == 'asc'))
-			html += this.getSortControl(cell, 'sortedAsc');
+			html += '&nbsp;' + this.getSortControl(cell, 'sortedAsc');
 		else 
-			html += ' <a href=# onClick="guidoTableSort(\'' + this.id + '\' , ' + columnId + ',\'asc\')">' + this.getSortControl(cell, 'sortAsc') + '</a>';
+			html += '&nbsp;<a href=# onClick="guidoTableSort(\'' + this.id + '\' , ' + columnId + ',\'asc\')">' + this.getSortControl(cell, 'sortAsc') + '</a>';
 
 		// DESC
 		if ((this.sort == columnId) && (this.direction == 'desc'))
-			html += this.getSortControl(cell, 'sortedDesc');
+			html += '&nbsp;' + this.getSortControl(cell, 'sortedDesc');
 		else 
-			html += ' <a href=# onClick="guidoTableSort(\'' + this.id + '\' , ' + columnId + ',\'desc\')">' + this.getSortControl(cell, 'sortDesc') + '</a>';
+			html += '&nbsp;<a href=# onClick="guidoTableSort(\'' + this.id + '\' , ' + columnId + ',\'desc\')">' + this.getSortControl(cell, 'sortDesc') + '</a>';
 	}
 
 	html += '</td>';
@@ -496,12 +496,12 @@ guidoTable.prototype.getSortControl = function(cell, sortControlType) {
 
 	if (control) {
 		if (control == 'guido')
-			return '&nbsp;<span style="font-family: Guido">' + symbol + '</span>';
+			return '<span style="font-family: Guido">' + symbol + '</span>';
 		else
-			return '&nbsp;<span style=' + control + '>' + symbol + '</span>';
+			return '<span style=' + control + '>' + symbol + '</span>';
 	}
 	else
-		return '&nbsp;' + symbol + '&nbsp;';
+		return symbol;
 };
 
 
