@@ -160,6 +160,20 @@ guidoForm.prototype._validate = function (field) {
 				if (! field.value.match(re))
 					return false;
 				break;
+			case 'ipv4':
+				return guidoMatchIpv4(field.value);
+				break;
+			case 'ipv4netmask':
+				var parts = field.value.split("/");
+				var test1 = guidoMatchIpv4(parts[0].trim());
+				var test2 = guidoMatchIpv4(parts[1].trim());
+				return (test1 && test2);
+				break;
+			case 'ipv4cidr':
+				var parts = field.value.split("/");
+				var test1 = guidoMatchIpv4(parts[0].trim());
+				var test2 = ( (parts[1].trim() > 0) && (parts[1].trim() < 33) ) ? true : false;
+				return (test1 && test2);
 		}
 	}
 

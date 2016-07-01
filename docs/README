@@ -189,6 +189,9 @@ Any field with a validator must have a value. If the field contains a string, it
 - 'negative': the field must contain a negative number.
 - 'notempty': the field must not be empty.
 - 'alphanumeric': the field must only contain alphanumeric characters (letters and/or numbers only)
+- 'ipv4': a single IPv4 IP address in dotted notation without netmask
+- 'ipv4netmask': a single IPv4 IP address in dotted notation, followed by a slash and netmask in dotted notation
+- 'ipv4cidr': a single IPv4 IP address in dotted notation, followed by a slash and netmask in CIDR notation
 
 The field value will be returned either as a number (if it contains only digits and a up to a single dot), or as a string. f you want to force a field to always return a sring, set the .getAsString property of the field.
 
