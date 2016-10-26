@@ -32,6 +32,8 @@ var guidoForm = function(params, callback) {
 	for (var i=0; i<fields.length; i++) {
 		if (! this.fields[fields[i]].hasOwnProperty('enabled'))
 			this.fields[fields[i]].enabled = true;
+		if (this.fields[fields[i]].multiField && ! this.fields[fields[i]].hasOwnProperty('multiFieldControls'))
+			this.fields[fields[i]].multiFieldControls = true;
 	}
 
 	// Create an ID if not supplied (also for multiField)
@@ -42,6 +44,27 @@ var guidoForm = function(params, callback) {
 			this.fields[fields[i]].attributes.id = 'f' + this.uuid4();
 		if (this.fields[fields[i]].multiField)
 			this.fields[fields[i]].multiField = 'mf' + this.uuid4();
+	}
+
+	// For multiField fields, create additional rows if requested (i.e. if .extra.text is array of strings
+	for (var i=0; i<fields.length; i++) {
+		if (this.fields[fields[i]].multiField && this.fields[fields[i]].extra && this.fields[fields[i]].extra.text && (typeof this.fields[fields[i]].extra.text == 'object' )) {
+			for (var j=0; j < (this.fields[fields[i]].extra.text.length - 1); j++) {
+				// Deep copy into new field
+				var newField = {};
+				guidoDeepCopyObject(this.fields[fields[i]], newField);
+
+				// Increment order, generate new ID
+				newField.order ++;
+				newId = 'f' + this.uuid4();
+
+				if (newField.attributes)
+					newField.attributes.id = newId;
+
+				// Attach to the form
+				this.fields[newId] = newField;
+			}
+		}
 	}
 
 	// Form validator
@@ -319,8 +342,10 @@ guidoForm.prototype.render = function (div) {
 			if ((this.fields[fields[i]].type == 'INPUT') && this.fields[fields[i]].extra && this.fields[fields[i]].extra.submitOnEnter) {
 				$( "#" + this.fields[fields[i]].attributes.id).keydown(function(e) {
 					var key = e.charCode ? e.charCode : e.keyCode ? e.keyCode : 0;
-					if (key == 13)
+					if (key == 13) {
+						e.preventDefault();
 						self.validate();
+					}
 				});
 			}
 		}
@@ -449,7 +474,7 @@ guidoForm.prototype.renderInput = function (field) {
 	html += '>';
 
 	// Multi-field INPUTs
-	if (field.multiField) {
+	if (field.multiField && field.multiFieldControls) {
 		var css = this.cssHtml(this.asArray(field.cssInput));
 
 		// Check how many rows of this type we have (the last row should not have the removal button [-])

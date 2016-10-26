@@ -20,10 +20,10 @@ The applicaitn consist of the follwing directories:
 /app: all application dirctories as described below. 
 
 
-WEB SERVER
-==========
+CONFIGURING WEB SERVER
+======================
 
-As a wen application, Guido needs to be served by a web server. You have three choices: 
+As a web application, Guido needs to be served by a web server. You have three choices: 
 - Internal web server
 - Apache httpd
 - Nginx
