@@ -122,7 +122,7 @@ function guidoLogger(params) {
 
 		fs.appendFile(self.http_log, msg, function (error) {
 			if (error)
-				self.critical("Unable to write to HTTP log file");
+				self.critical("Unable to write to HTTP log file " + self.http_log);
 		});
 	};
 };

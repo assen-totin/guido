@@ -365,6 +365,7 @@ function guidoAbToUtf8(arrayBuffer) {
 function guidoTableSort(tableId, columnId, direction) {
 	appRun.tables[tableId].sort = columnId;
 	appRun.tables[tableId].direction = direction;
+
 	// Reset pagination
 	appRun.tables[tableId].currentPage = 1;
 
@@ -379,8 +380,23 @@ function guidoTableSort(tableId, columnId, direction) {
 
 function guidoTablePage(tableId, page) {
 	appRun.tables[tableId].currentPage = page;
-
 	appRun.tables[tableId].render();
+};
+
+/**
+ * Re-render table on filter toggle
+ * @param tableId String The ID of the table to render
+ * @param status Boolean The status of the filter (visible or hidden)
+ */
+
+function guidoTableFilter(tableId, status) {
+	// Reset pagination
+	appRun.tables[tableId].currentPage = 1;
+
+	if (status)
+		appRun.tables[tableId].filterShow();
+	else
+		appRun.tables[tableId].filterHide();
 };
 
 /**
@@ -403,7 +419,6 @@ function guidoFormGetFile(event) {
  * @param ip String The IP address to match
  * @returs TRUE if the string is a valid address or netmask, FALSE otherwise
  */
-
 function guidoMatchIpv4(ip) {
         // Check for single IPv4
         var re = /(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/;
@@ -412,4 +427,19 @@ function guidoMatchIpv4(ip) {
         return false;
 };
 
+/**
+ * Get the current layout name
+ * @returns The name of the current layout
+ */
+function guidoGetLayout() {
+	return guidoRun.current_layout;
+};
+
+/**
+ * Get the current section name
+ * @returns The name of the current section
+ */
+function guidoGetSection() {
+	return guidoRun.current_section;
+};
 

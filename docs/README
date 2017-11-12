@@ -157,7 +157,7 @@ params = {
 								// NB! The external validation function for the form receives the form's object as argument  *must* return FALSE if validation passed! 
 								// Every TRUE value till be considered failure and will be passed back to the callback as error!
 	},
-	css: [],		// CSS classes that will be applied to the form. Optional.
+	css: [] || '',	// CSS classes that will be applied to the form. Optional. String or array.
 	div: '',		// The ID of the DIV where to render the form. Optional. If missing, the form will not be rendered, so call .render() manually 
 					// with a DIV as param to render it or without argument to obtain the form's HTML.
 	exec: [] || ''	// Name or aray of names of functions to execute when the form is rendered.
@@ -209,7 +209,10 @@ var params = {
 	div: '',						// The ID of the DIV where to render the form. Optional. If missing, the form will not be rendered, 
 									// so call .render() manually - with a DIV as param to render it or without argument to obtain the form's HTML.
 	exec: [] || ''					// Name or aray of names of functions to execute when the form is rendered.
-	css: [],						// CSS classes that will be applied to the table. Optional.
+	css: [] || '',					// CSS classes that will be applied to the table. String or array. Optional.
+	cssOdd: [] || '',				// CSS classes that will be applied to odd rows of the table. String or array. Optional.
+	cssEven: [] || '',				// CSS classes that will be applied to even rows of the table. String or array. Optional.
+	cssCells: [] || '',				// CSS classes that will be applied to each cell in the table. String or array. Optional.
 	sort: 0,						// The ID of the column to sort by (leftmost is 0)
 	direction: 'asc',				// Direction of sort ('asc' or 'desc').
 	comparator: Function			// Comparator funciton to use when sorting (optional; default: autodetect)
@@ -227,6 +230,12 @@ var params = {
 		css: [],					// CSS classes to apply to pagination controls (will NOT inherit the CSS of the table!)
 	},
 
+	filter: {
+		enabled: bool,				// Whether the filter is enabled or not. Default false.
+		visible: bool,				// Whether the filter is visible (expanded) or not by default. Default false.
+		css: [] || '',				// CSS classes that will be applied to each cell in the filter. String or array. Optional.
+	},
+
 	header: {						// Header row object
 		id: '',						// The ID of the header row. Optional (a random one will be generated if missing).
 		css: [],					// CSS classes that will be applied to the header row. Optional.
@@ -234,13 +243,18 @@ var params = {
 			{
 				id: '',				// The ID of the cell. Optional (a random one will be generated if missing).
 				css: [],			// CSS classes that will be applied to the cell. Optional.
-				enabled: true,		// Whether to render the column or not (default: true).
+				enabled: bool,		// Whether to render the column or not (default: true).
 				sort: true,			// Allow sorting by this column (and show arrows to do so). Default: false.
 				sortControls: {		// Same as above, but locally for this cell. Overrides the global settings for the cell.
 					sortAsc: '',	
 					sortDesc: '',	
 					sortedAsc: '',	
 					sortedDesc: '',	
+				},
+				filter: {			// Filter for the column. Optional.
+					enabled: bool	// Whether the column has filter. Default false. Optional.
+					id: '',			// The ID of the filter for this column. Optional (a random one will be generated if missing).
+					value: '',		// The value of the filter. Default empty string. Optional.
 				},
 				content: '',		// Cell's content.
 			},

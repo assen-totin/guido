@@ -45,6 +45,9 @@ guidoRun.gettext = null;
 guidoRun.locales = {};
 guidoRun.po = {};
 
+// Init form handlers
+guidoRun.forms = {};
+
 /**
  * Main entry point
  * Will be invoked once on application's load.
@@ -246,9 +249,8 @@ function guidoLoadLayout(layout, section) {
 	// Call per-section APP unloading function
 	if (section !== guidoRun.current_section) {
 		var app_func_unload_section = 'appUnloadSection_' + guidoRun.current_section;
-		if (typeof window[app_func_unload_section] == 'function') {
+		if (typeof window[app_func_unload_section] == 'function')
 			window[app_func_unload_section]();
-		}		
 	}
 
 	var old_layout = guidoRun.current_layout;
@@ -264,10 +266,20 @@ function guidoLoadLayout(layout, section) {
 	var title = guidoComposeTitle(null);
 	guidoSetLocation('/' + guidoRun.current_layout + '/' + section, title);
 
+	// Call common layout function (if defined)
+	var app_func_load_layout_common = 'appLoadLayout';
+	if (typeof window[app_func_load_layout_common] == 'function')
+		window[app_func_load_layout_common]();
+
 	// Call per-layout APP loading function
 	var app_func_load_layout = 'appLoadLayout_' + layout;
 	if (typeof window[app_func_load_layout] == 'function')
 		window[app_func_load_layout]();
+
+	// Call common section APP loading function
+	var app_func_load_section_common = 'appLoadSection';
+	if (typeof window[app_func_load_section_common] == 'function')
+		window[app_func_load_section_common]();
 
 	// Call per-section APP loading function
 	var app_func_load_section = 'appLoadSection_' + section;
@@ -311,6 +323,11 @@ function guidoLoadSection(section) {
 	$(document.body).children("div").each(function(index, element){
 		guidoUnloadTemplate(index, element);
 	});
+
+	// Call common section APP loading function
+	var app_func_load_section_common = 'appLoadSection';
+	if (typeof window[app_func_load_section_common] == 'function')
+		window[app_func_load_section_common]();
 
 	// Call per-section APP loading function
 	var app_func_load = 'appLoadSection_' + section;
