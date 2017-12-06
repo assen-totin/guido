@@ -20,8 +20,8 @@ var guidoTable = function(params, callback) {
 
 	// Table CSS
 	this.css = params.css || null;
-	this.cssOdd = params.cssOdd || null;
-	this.cssEven = params.cssEven || null;
+	this.cssOdd = params.cssOdd || '';
+	this.cssEven = params.cssEven || '';
 	this.cssRows = params.cssRows || null;
 	this.cssCells = params.cssCells || null;
 
@@ -94,17 +94,6 @@ var guidoTable = function(params, callback) {
 			this.rows[i].enabled = true;
 	}
 
-	// Rows: attach cssOdd and cssEven if they are defined
-	if (this.cssOdd) {
-		for (var i=1; i < this.rows.length; i+=2)
-			this.rows[i].css += ' ' + this.cssOdd;
-	}
-
-	if (this.cssEven) {
-		for (var i=0; i < this.rows.length; i+=2)
-			this.rows[i].css += ' ' + this.cssEven;
-	}
-
 	// Rows: attach per-row CSS if given
 	if (this.cssRows) {
 		for (var i=0; i < this.rows.length; i++)
@@ -136,6 +125,8 @@ var guidoTable = function(params, callback) {
 guidoTable.prototype.render = function (div) {
 	this.logger.debug("Entering function render() with sort, page " + this.sort + ',' + this.currentPage);
 
+	this.rowIdx = 0;
+
 	var html = '';
 
 	if (div)
@@ -149,7 +140,7 @@ guidoTable.prototype.render = function (div) {
 			method = 'custom';
 		else {
 			method = 'int';
-			for (var i=0; i<this.rows.length - 1; i++) {
+			for (var i=0; i<this.rows.length; i++) {
 				// Handle rowspan cells
 				if (! this.rows[i].cells[this.sort])
 					continue;
@@ -160,6 +151,8 @@ guidoTable.prototype.render = function (div) {
 				}
 			}
 		}
+
+this.logger.debug("Sorting method is: " + method);
 
 		var cmp = 0;
 
@@ -223,11 +216,13 @@ guidoTable.prototype.render = function (div) {
 	html += this.renderHeader();
 
 	// Loop over rows
+	var rowIdx = 0;
 	for (var i=0; i<this.rows.length; i++) {
 		if (this.page && (i < this.page * (this.currentPage - 1)))
 			continue;
 		if (this.page && (i >= this.page * this.currentPage))
 			continue;
+
 		html += this.renderRow(this.rows[i]);
 	}
 
@@ -292,7 +287,7 @@ guidoTable.prototype.renderHeader = function () {
 	for (var i=0; i < this.header.cells.length; i++) {
 		// See if this column is enabled for rendering in the header
 		if (this.header.cells[i].enabled)
-			html += this.renderCell(this.header.cells[i], i);
+			html += this.renderCell(this.header.cells[i], i, true);
 	}
 
 	html += '</tr>';
@@ -331,6 +326,12 @@ guidoTable.prototype.renderRow = function (row) {
 	if (! row.enabled)
 		return '';
 
+	if (this.rowIdx % 2 == 0)
+		row.cssExtra = this.cssEven;
+	else
+		row.cssExtra = this.cssOdd;
+	this.rowIdx ++;
+
 	var html = '<tr ' + this._renderCommon(row) + '>';
 
 	// If filter is enabled, insert empty column for the filter toggle (rendered in header row)
@@ -340,7 +341,7 @@ guidoTable.prototype.renderRow = function (row) {
 	for (var i=0; i<row.cells.length; i++) {
 		// See if this column is enabled for rendering in the header
 		if (this.header.cells[i].enabled)
-			html += this.renderCell(row.cells[i], i);
+			html += this.renderCell(row.cells[i], i, false);
 	}
 
 	html += '</tr>';
@@ -355,7 +356,7 @@ guidoTable.prototype.renderRow = function (row) {
 /**
  * Render cell
  */
-guidoTable.prototype.renderCell = function (cell, columnId) {
+guidoTable.prototype.renderCell = function (cell, columnId, isHeader) {
 	this.logger.debug("Entering function renderCell()...");
 
 	var html = '<td ';
@@ -364,8 +365,19 @@ guidoTable.prototype.renderCell = function (cell, columnId) {
 
 	html += '>';
 
-	if (cell.hasOwnProperty('content') && cell.content !== null)
-		html += cell.content;
+	if (cell.hasOwnProperty('content') && cell.content !== null) {
+		// Check if we need to call a rendering function
+		if (isHeader)
+			html += cell.content;
+		else {
+			if (cell.hasOwnProperty('onRender'))
+				html += cell.onRender(cell.content);
+			else if (this.header.cells[columnId].hasOwnProperty('onRender'))
+				html += this.header.cells[columnId].onRender(cell.content);
+			else
+				html += cell.content;
+		}
+	}
 
 	// Header cells may be sortable
 	// Sorting arrows: use ↑ and ↓ for directions, ⇧ and ⇩ for current sort
@@ -405,7 +417,7 @@ guidoTable.prototype._renderCommon = function (item) {
 	html += 'id="' + item.id + '" ';
 
 	// Attach CSS
-	html += this.cssHtml(this.asArray(item.css));
+	html += this.cssHtml(this.asArray(item.css, item.cssExtra));
 
 	// Attach colspan/rowspan
 	if (item.rowspan)
@@ -530,16 +542,27 @@ guidoTable.prototype.uuid4 = function() {
  * Convert string to array with one element
  * Useful when one or more values are acceptable per property.
  */
-guidoTable.prototype.asArray = function(data) {
-	if (!data)
-		return [];
-
-	if (data.constructor == Array)
-		return data;
-
-	// Create an array with a single member
+guidoTable.prototype.asArray = function(data, data2) {
 	var ret = [];
-	ret.push(data);
+
+	if (data) {
+		if (data.constructor == Array) {
+			for (var i=0; i<data.length; i++)
+				ret.push(data[i]);
+		}
+		else
+			ret.push(data);
+	}
+
+	if (data2) {
+		if (data2.constructor == Array) {
+			for (var i=0; i<data2.length; i++)
+				ret.push(data2[i]);
+		}
+		else
+			ret.push(data2);
+	}
+
 	return ret;
 };
 

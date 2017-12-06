@@ -256,6 +256,8 @@ var params = {
 					id: '',			// The ID of the filter for this column. Optional (a random one will be generated if missing).
 					value: '',		// The value of the filter. Default empty string. Optional.
 				},
+				onRender: function,	// The function to apply to the contents of all cells in the column when rendering
+									// Used only if the cell itself does not define an onRender function
 				content: '',		// Cell's content.
 			},
 			// ...
@@ -274,6 +276,7 @@ var params = {
 					id: '',			// The ID of the cell. Optional (a random one will be generated if missing).
 					css: [],		// CSS classes that will be applied to the cell. Optional.
 					colspan: 0,		// Column span (optional if 0)
+					onRender: function,	// The function to apply to the contents of this cell when rendering
 					content: '',	// Cell's content.
 				},
 				// ...
