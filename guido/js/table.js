@@ -152,8 +152,6 @@ guidoTable.prototype.render = function (div) {
 			}
 		}
 
-this.logger.debug("Sorting method is: " + method);
-
 		var cmp = 0;
 
 		for (var i=0; i<this.rows.length - 1; i++) {
@@ -216,11 +214,16 @@ this.logger.debug("Sorting method is: " + method);
 	html += this.renderHeader();
 
 	// Loop over rows
-	var rowIdx = 0;
+	var rowIndex = -1;
 	for (var i=0; i<this.rows.length; i++) {
-		if (this.page && (i < this.page * (this.currentPage - 1)))
+		if (! this.rows[i].enabled)
 			continue;
-		if (this.page && (i >= this.page * this.currentPage))
+
+		rowIndex ++;
+
+		if (this.page && (rowIndex < this.page * (this.currentPage - 1)))
+			continue;
+		if (this.page && (rowIndex >= this.page * this.currentPage))
 			continue;
 
 		html += this.renderRow(this.rows[i]);
@@ -641,11 +644,18 @@ guidoTable.prototype.getPageControls = function() {
 	var html = '';
 	var htmlPage = '';
 
+	// Calculate number of visible rows
+	var rowCnt = 0;
+	for (var i=0; i<this.rows.length; i++) {
+		if (this.rows[i].enabled)
+			rowCnt++;
+	}
+
 	// Calculate previous, next and last pages
 	var pageP = this.currentPage - 1;
 	var pageN = this.currentPage + 1;
-	var pageL = parseInt(this.rows.length / this.page, 10);
-	if (this.rows.length % this.page)
+	var pageL = parseInt(rowCnt / this.page, 10);
+	if (rowCnt % this.page)
 		pageL ++;
 /*
 	We show the following pages: first (F), previous (P), current (C), next (N), last (L) 
@@ -761,7 +771,7 @@ guidoTable.prototype.filterRun = function() {
 			if (! this.header.cells[j].filter.value)
 				continue;
 
-			if (this.rows[i].cells[j].content.indexOf(this.header.cells[j].filter.value) < 0) {
+			if (this.rows[i].cells[j].content.toLowerCase().indexOf(this.header.cells[j].filter.value.toLowerCase()) < 0) {
 				this.rows[i].enabled = false;
 				break;
 			}	
