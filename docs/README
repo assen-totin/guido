@@ -160,7 +160,7 @@ params = {
 	css: [] || '',	// CSS classes that will be applied to the form. Optional. String or array.
 	div: '',		// The ID of the DIV where to render the form. Optional. If missing, the form will not be rendered, so call .render() manually 
 					// with a DIV as param to render it or without argument to obtain the form's HTML.
-	exec: [] || ''	// Name or aray of names of functions to execute when the form is rendered.
+	exec: function || [f1, f2...]	// Function or aray of functions to execute when the form is rendered.
 }
 
 The callback function has the following prototype:
@@ -208,7 +208,7 @@ var params = {
 	id: '',							// The ID of the table. Optional (a random one will be generated if missing).
 	div: '',						// The ID of the DIV where to render the form. Optional. If missing, the form will not be rendered, 
 									// so call .render() manually - with a DIV as param to render it or without argument to obtain the form's HTML.
-	exec: [] || ''					// Name or aray of names of functions to execute when the form is rendered.
+	exec: function || [f1, f2...]	// Function or aray of functions to execute when the table is rendered.
 	css: [] || '',					// CSS classes that will be applied to the table. String or array. Optional.
 	cssOdd: [] || '',				// CSS classes that will be applied to odd rows of the table. String or array. Optional.
 	cssEven: [] || '',				// CSS classes that will be applied to even rows of the table. String or array. Optional.

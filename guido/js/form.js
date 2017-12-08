@@ -8,6 +8,7 @@ var guidoForm = function(params, callback) {
 	// Form name & ID
 	this.id = params.id || 'F' + this.uuid4();	// Make sure we always start with a letter!
 	this.name = params.name || this.id;
+	guidoRun.forms[this.id] = this;
 
 	// Store the callback
 	this.callback = callback;
@@ -30,10 +31,9 @@ var guidoForm = function(params, callback) {
 	// Set default enabled
 	var fields = Object.keys(this.fields);
 	for (var i=0; i<fields.length; i++) {
+		this.fields[fields[i]].filtered = false;
 		if (! this.fields[fields[i]].hasOwnProperty('enabled'))
 			this.fields[fields[i]].enabled = true;
-		if (this.fields[fields[i]].multiField && ! this.fields[fields[i]].hasOwnProperty('multiFieldControls'))
-			this.fields[fields[i]].multiFieldControls = true;
 	}
 
 	// Create an ID if not supplied (also for multiField)
@@ -44,27 +44,6 @@ var guidoForm = function(params, callback) {
 			this.fields[fields[i]].attributes.id = 'f' + this.uuid4();
 		if (this.fields[fields[i]].multiField)
 			this.fields[fields[i]].multiField = 'mf' + this.uuid4();
-	}
-
-	// For multiField fields, create additional rows if requested (i.e. if .extra.text is array of strings
-	for (var i=0; i<fields.length; i++) {
-		if (this.fields[fields[i]].multiField && this.fields[fields[i]].extra && this.fields[fields[i]].extra.text && (typeof this.fields[fields[i]].extra.text == 'object' )) {
-			for (var j=0; j < (this.fields[fields[i]].extra.text.length - 1); j++) {
-				// Deep copy into new field
-				var newField = {};
-				guidoDeepCopyObject(this.fields[fields[i]], newField);
-
-				// Increment order, generate new ID
-				newField.order ++;
-				newId = 'f' + this.uuid4();
-
-				if (newField.attributes)
-					newField.attributes.id = newId;
-
-				// Attach to the form
-				this.fields[newId] = newField;
-			}
-		}
 	}
 
 	// Form validator
@@ -97,7 +76,7 @@ guidoForm.prototype.validate = function () {
 	this.readValues();
 
 	// Check if external validator was supplied and call it
-	// NB! The external validator for the full form must return FALSE if everything passed! Every TRUE value till be considered failure and will be passed back to the callback as error!
+	// NB! The external validator for the full form must return FALSE if everything passed! Every TRUE value will be considered failure and will be passed back to the callback as error!
 	if (typeof this.validator.validate == 'function') {
 		error = this.validator.validate(this);
 		if (error)
@@ -112,7 +91,7 @@ guidoForm.prototype.validate = function () {
 		var field = this.fields[fields[i]];
 		if (field.enabled && field.validator && field.validator.enabled) {
 			// If external validator for this field was provided, call it
-			// NB! The external validator for a field must return TRUE if everything passed! Every FALSE value till be considered failure and callback will be invoked with the field as error!
+			// NB! The external validator for a field must return TRUE if everything passed! Every FALSE value will be considered failure and callback will be invoked with the field as error!
 			if (typeof field.validator.validate == 'function') {
 				check = field.validator.validate(field.value);
 				if (! check)
@@ -186,17 +165,6 @@ guidoForm.prototype._validate = function (field) {
 			case 'ipv4':
 				return guidoMatchIpv4(field.value);
 				break;
-			case 'ipv4netmask':
-				var parts = field.value.split("/");
-				var test1 = guidoMatchIpv4(parts[0].trim());
-				var test2 = guidoMatchIpv4(parts[1].trim());
-				return (test1 && test2);
-				break;
-			case 'ipv4cidr':
-				var parts = field.value.split("/");
-				var test1 = guidoMatchIpv4(parts[0].trim());
-				var test2 = ( (parts[1].trim() > 0) && (parts[1].trim() < 33) ) ? true : false;
-				return (test1 && test2);
 		}
 	}
 
@@ -338,24 +306,15 @@ guidoForm.prototype.render = function (div) {
 
 		// If this field should submit on Enter key, set up a listener
 		var self = this;
-		for (var i=0; i<fields.length; i++) {
-			if ((this.fields[fields[i]].type == 'INPUT') && this.fields[fields[i]].extra && this.fields[fields[i]].extra.submitOnEnter) {
-				$( "#" + this.fields[fields[i]].attributes.id).keydown(function(e) {
-					var key = e.charCode ? e.charCode : e.keyCode ? e.keyCode : 0;
-					if (key == 13) {
-						e.preventDefault();
-						self.validate();
-					}
-				});
-			}
-		}
+
+		// Set a global listener on this form for the Enter key
+		$('#' + this.id).off('keydown', 'input');
+		$('#' + this.id).on('keydown', 'input', this.captureEnter);
 
 		// If exec params are set, execute them
-		if (this.exec) {
-			var exec = this.asArray(this.exec);
-			for (var i=0; i<exec.length; i++)
-				eval(exec[i] + "()");
-		}
+		var exec = this.asArray(this.exec);
+		for (var i=0; i<exec.length; i++)
+			exec[i]();
 	}
 
 	return html;
@@ -466,6 +425,10 @@ guidoForm.prototype.renderInput = function (field) {
 
 	html += this._renderCommon(field);
 
+	// Attach extra
+	if (field.extra && field.extra.submitOnEnter)
+		html += ' guidoExtra=submitOnEnter';
+
 	if (field.attributes.type && (field.attributes.type == 'submit')) {
 		html += ' onClick="appRun.forms.' + this.id + '.validator()"';
 		this.logger.warning("You should not use INPUT elements with TYPE=SUBMIT; use BUTTON instead.");
@@ -474,7 +437,7 @@ guidoForm.prototype.renderInput = function (field) {
 	html += '>';
 
 	// Multi-field INPUTs
-	if (field.multiField && field.multiFieldControls) {
+	if (field.multiField) {
 		var css = this.cssHtml(this.asArray(field.cssInput));
 
 		// Check how many rows of this type we have (the last row should not have the removal button [-])
@@ -826,15 +789,17 @@ guidoForm.prototype.multiFormDel = function(id) {
  * Useful when one or more values are acceptable per property.
  */
 guidoForm.prototype.asArray = function(data) {
-	if (!data)
-		return [];
-
-	if (data.constructor == Array)
-		return data;
-
-	// Create an array with a single member
 	var ret = [];
-	ret.push(data);
+
+	if (data) {
+		if (data.constructor == Array) {
+			for (var i=0; i<data.length; i++)
+				ret.push(data[i]);
+		}
+		else
+			ret.push(data);
+	}
+
 	return ret;
 };
 
@@ -854,6 +819,59 @@ guidoForm.prototype.cssHtml = function(css) {
 	html += '" ';
 
 	return html;
+};
+
+/**
+ * Form listener to capture Enter key and act upon it
+ */
+guidoForm.prototype.captureEnter = function(event) {
+	if (event.which != 13)
+		return;
+
+	event.preventDefault();
+
+	// Get the form ID so that we may reach it
+	var formId = $(event.target.form).attr('id');
+
+	// Check if we have "guidoExtra" in this field
+	var guidoExtra = $(event.target).attr("guidoExtra");
+	if (guidoExtra)
+		// Submit form
+		guidoRun.forms[formId].validate();
+	else {
+		// Move focus to next input ID
+		// Get current input ID
+		var inputId = $(event.target).attr('id');
+
+		// Get its order No from the form
+		var inputOrder = -1;
+		var fields = Object.keys(guidoRun.forms[formId].fields);
+		for (var i=0; i<fields.length; i++) {
+			if (inputId == guidoRun.forms[formId].fields[fields[i]].attributes.id) {
+				inputOrder = guidoRun.forms[formId].fields[fields[i]].order;
+			}
+		}
+
+		// Get the ID of the next element in the form
+		var nextOrder = inputOrder;
+		var nextId = null;
+		for (var i=0; i<fields.length; i++) {
+			var order = guidoRun.forms[formId].fields[fields[i]].order;
+			if (order > inputOrder) {
+				if (nextOrder == inputOrder) {
+					nextOrder = order;
+					nextId = guidoRun.forms[formId].fields[fields[i]].attributes.id;
+				}
+				else if (order < nextOrder) {
+					nextOrder = order;
+					nextId = guidoRun.forms[formId].fields[fields[i]].attributes.id;
+				}
+			}
+		}
+
+		// Move focus to next input field
+		$('#' + nextId).focus();
+    }
 };
 
 if (typeof module !== 'undefined' && typeof module.exports !== 'undefined')

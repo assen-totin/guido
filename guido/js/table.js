@@ -259,11 +259,9 @@ guidoTable.prototype.render = function (div) {
 		}
 
 		// If exec params are set, execute them
-		if (this.exec) {
-			var exec = this.asArray(this.exec);
-			for (var i=0; i < exec.length; i++)
-				eval(exec[i] + "()");
-		}
+		var exec = this.asArray(this.exec);
+		for (var i=0; i<exec.length; i++)
+			exec[i]();
 	}
 
 	// Call the post-rendering function
