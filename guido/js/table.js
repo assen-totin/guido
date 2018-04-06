@@ -698,7 +698,8 @@ guidoTable.prototype.getPageControls = function() {
 		htmlPage += '... ';
 
 	// Show L
-	if (this.currentPage != pageL)
+//	if (this.currentPage != pageL)
+	if (this.currentPage < pageL)
 		htmlPage += '<a href=javascript:void(0) onClick="guidoTablePage(\'' + this.id + '\', ' + pageL + ')";>' + pageL + '</a> ';
 
 	// Assenble a table row with controls on left, right or both
