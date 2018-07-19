@@ -139,7 +139,7 @@ params = {
 				...
 			},
 			// Extra type-specific extra options
-			// - for SELECT: options=[{value:'',text:''}], selected='index', sort='asc'|'desc', comparator=func()
+			// - for SELECT: options=[{value:'',text:''}], selected='index', sort='asc'|'desc', multiple=bool, comparator=func()
 			// - for RADIO: options=[{value:'',text:''}], selected='index'
 			// - for CHECKBOX: selected=bool
 			// - for TEXTAREA: text=''
@@ -203,7 +203,7 @@ Field types:
 - INPUT: creates an INPUT field. You must supply at least name=XXX and type={text|password|hidden} in 'attributes' property. Do NOT use type=submit; use BUTTON field instead.
 - TEXTAREA: creates an TEXTAREA field. You must supply at least name=XXX in 'attributes' property. To set text inside the area, supply text=XXX in 'extra' property
 - CHECKBOX: creates a CHECKBOX field. You must supply at least name=XXX in 'attributes' property. No need to suppliy type=checkbox. If you want the checkbox checked, supply smth=['checked'] in 'attributes' property. 
-- SELECT: creates a SELECT field. You must supply at least name=XXX in 'attributes' property. Options are supplied as array of objects in the 'extra' property; each of them must have a property 'value' (the value of the option in HTML sense) and a 'text' property (visible in the drop-down on screen). To have an option selected, send its value in the 'default' property of the 'extra' property.
+- SELECT: creates a SELECT field. You must supply at least name=XXX in 'attributes' property. Options are supplied as array of objects in the 'extra' property; each of them must have a property 'value' (the value of the option in HTML sense) and a 'text' property (visible in the drop-down on screen). To have an option selected, send its value in the 'default' property of the 'extra' property. If you specify extra.multiple=true, a multi-options select is created and the returned value is an array.
 - RADIO: creates radio buttons from a single field. You must supply at least name=XXX in 'attributes' property. No need to suppliy type=radio. Options are supplied as array of objects in the 'extra' property; each of them must have a property 'value' (the value of the option in HTML sense) and a 'text' property (shown as label after the radio button). To have an option selected, send its value in the 'default' property of the 'extra' property.
 - BUTTON: creates an BUTTON field. You must supply at least type=button in 'attributes' property. To set the text of the button, supply text=XXX in 'extra' property. Do NOT use type=submit as browsers may try to submit and/or re-render the page! If you want the button to have its own custom function, supply it (or, better, its name) in the extra.action property; to process the form, use the special built-in funciton 'submit'.
 - TEXT: displays a free text instead of a form field. Supply the text in the extra.text property.

@@ -10,6 +10,9 @@ var guidoForm = function(params, callback) {
 	this.name = params.name || this.id;
 	guidoRun.forms[this.id] = this;
 
+	// Check if DATALIST is supported
+	this.datalistSupported = ('options' in document.createElement('datalist')) ? true : false;
+
 	// Store the callback
 	this.callback = callback;
 
@@ -154,12 +157,13 @@ guidoForm.prototype._validate = function (field) {
 					return false;
 				break;
 			case 'alphanumeric':
+				var str = field.value;
 				if (typeof field.value == 'number')
-					field.value += '';
-				if (! field.value.match)
+					str += '';
+				if (! str.match)
 					return false;
 				var re = /^[a-zA-Z0-9]*$/;
-				if (! field.value.match(re))
+				if (! str.match(re))
 					return false;
 				break;
 			case 'ipv4':
@@ -196,14 +200,39 @@ guidoForm.prototype.readValues = function () {
 				var value = null;
 				switch(field.type) {
 					case 'INPUT':
+						value = elements[i].value;
+						break;
 					case 'TEXTAREA':
 						value = elements[i].value;
 						break;
 					case 'SELECT':
-						var index = elements[i].selectedIndex;
-						// Drop-down may be empty (-1 returned as index in this case)
-						if (index > -1)
-							value = elements[i].options[index].value;
+						// Get real value if INPUT was made from a SELECT -> DATALIST 
+						if (field.extra && field.extra.datalist && this.datalistSupported) {
+							value = elements[i].value;
+							for (var k=0; k<field.extra.options.length; k++) {
+								if (value == field.extra.options[k].text) {
+									value = field.extra.options[k].value;
+									break;
+								}
+							}
+						}
+						else {
+							if (field.attributes.multiple) {
+								// Retrieve multiple selections
+								value = [];
+								for (var k=0, kLen=elements[i].options.length; k<kLen; k++) {
+									if (elements[i].options[k].selected)
+										value.push(elements[i].options[k].value);
+								}
+							}
+							else {
+								// Single-choice select
+								var index = elements[i].selectedIndex;
+								// Drop-down may be empty (-1 returned as index in this case)
+								if (index > -1)
+									value = elements[i].options[index].value;
+							}
+						}
 						break;
 					case 'CHECKBOX':
 						value = elements[i].checked;
@@ -511,12 +540,32 @@ guidoForm.prototype.renderTextarea = function (field) {
  */
 guidoForm.prototype.renderSelect = function (field) {
 	this.logger.debug("Entering function renderSelect()...");
+	var html = '';
 
-	var html = '<select ';
-	html += this._renderCommon(field);
-	html += '>';
+	// Render as INPUT + DATALIST or regular SELECT (with optional multiple selection)
+	if (field.extra && field.extra.hasOwnProperty('datalist') && this.datalistSupported) {
+		// Assign a datalist name if not given
+		if (! field.extra.datalist)
+			field.extra.datalist = this.uuid4();
 
-	if (field.extra.options) {
+		if (field.extra.options) {
+			html += '<datalist id=' + field.extra.datalist + '>';
+			for (var i=0; i<field.extra.options.length; i++)
+				html += '<option value="' + field.extra.options[i].text + '">';
+			html += '</datalist>';
+		}
+
+		html += '<input list=' + field.extra.datalist + ' ';
+		html += this._renderCommon(field);
+		if (field.extra.submitOnEnter)
+			html += ' guidoExtra=submitOnEnter';
+		html += '>';
+	}
+	else {
+		html += '<select ';
+		html += this._renderCommon(field);
+		html += '>';
+
 		// Sort the options if asked to
 		if (field.extra.sort)
 			guidoSortObjects(field.extra.options, 'text', field.extra.sort, field.extra.comparator);
@@ -528,18 +577,18 @@ guidoForm.prototype.renderSelect = function (field) {
 		else if (field.extra.selected)
 			selected = field.extra.selected;
 
-		// Render
-		for (var i=0; i<field.extra.options.length; i++) {
-			html += '<option value="' + field.extra.options[i].value + '" ';
+		if (field.extra.options) {
+			for (var i=0; i<field.extra.options.length; i++) {
+				html += '<option value="' + field.extra.options[i].value + '" ';
 
-			if (field.extra.options[i].value == selected)
-				html += 'selected ';
+				if (field.extra.options[i].value == selected)
+					html += 'selected ';
 
-			html += '>' + field.extra.options[i].text + '</item>';
+				html += '>' + field.extra.options[i].text + '</option>';
+			}
 		}
+		html += '</select>';
 	}
-
-	html += '</select>';
 
 	return html;
 };
