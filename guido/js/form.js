@@ -451,8 +451,11 @@ guidoForm.prototype.renderInput = function (field) {
 	this.logger.debug("Entering function renderInput()...");
 
 	// Copy the value as atribute if it had been read (e.g., when re-rendering)
+	// - or use a default if specified
 	if (field.value)
 		field.attributes.value = field.value;
+	else if (field.extra && field.extra.text)
+		field.attributes.value = field.extra.text;
 
 	var html = '<input ';
 
