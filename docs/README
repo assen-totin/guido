@@ -328,6 +328,9 @@ var params = {
 				onRender: func(),
 				// Cell's content.
 				content: '',
+				// Optional shortened (ellipsized) cell's content and the optional ellipse text (default "more...")
+				contentEllipse: '',
+				ellipse: '',
 			},
 			// ...
 		],	

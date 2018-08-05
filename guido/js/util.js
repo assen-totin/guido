@@ -400,6 +400,17 @@ function guidoTableFilter(tableId, status) {
 };
 
 /**
+ * Replace ellpisized content with the full one
+ * @param cellId String The ID of the table cell whose content will be replaced
+ * @param content String The full content that will replace the allipsezed one
+ */
+
+function guidoTableEllipse(cellId, content) {
+	var el = document.getElementById(cellId);
+	el.innerHTML = content;
+};
+
+/**
  * Extract File object from file form field (global function for forms)
  * @param event Event The file changed event
  */

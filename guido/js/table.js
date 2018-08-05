@@ -379,8 +379,17 @@ guidoTable.prototype.renderCell = function (cell, columnId, isHeader) {
 				html += cell.onRender(cell.content);
 			else if (this.header.cells[columnId].hasOwnProperty('onRender'))
 				html += this.header.cells[columnId].onRender(cell.content);
-			else
-				html += cell.content;
+			else {
+				// Check if we need to ellipsize
+				if (cell.contentEllipse) {
+					html += cell.contentEllipse;
+					html += '<a href=javascript:void(0) onClick="guidoTableEllipse(\'' + cell.id + '\',\'' + cell.content + '\')">';
+					html += (cell.ellipse) ? cell.ellipse : ' more...';
+					html += '</a>';
+				}
+				else
+					html += cell.content;
+			}
 		}
 	}
 
