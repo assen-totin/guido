@@ -3,7 +3,7 @@
  * 
  * @author Assen Totin assen.totin@gmail.com
  * 
- * Created for the GUIdo project, copyright (C) 2014 Assen Totin, assen.totin@gmail.com 
+ * Created for the GUIdo project, copyright (C) 2014-2019 Assen Totin, assen.totin@gmail.com 
  * 
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -441,6 +441,47 @@ function guidoSync(cb) {
 			cb();
 	};
 }
+
+/**
+ * Serialising object - process elements one by one
+ * Make an instance and pass it an array, a function to call for each member and another function to call when all members are processed
+ * @param elements array The elements to process
+ * @param each function The fucntion to call for each element
+ * @param done function The fucntion to call once all elements are processed
+ */
+function guidoSerialise(elements, each, done) {
+	guidoRun.logger.debug('Creating new guidoSerialise object...');
+
+    this.counter = -1;
+ 
+	// Get current element
+    this.getEntry = function(id) {
+        if (id) {
+            return elements[id];   
+        }
+        else {
+            return elements[this.counter]; 
+        }
+    };
+     
+    // Process next element of the array or call the done() function  
+    this.run = function(delay) {
+        this.counter++;
+        var self = this;
+        if (elements[this.counter]) {
+            if (typeof(each) === 'function') {
+                setTimeout(function(){
+                    each(elements[self.counter]);
+                }, delay);                  
+            }
+        }
+        else {
+            // When last file from the input array is processed...
+            if (typeof(done) === 'function')
+                done(); 
+        }
+    };
+};
 
 
 /**

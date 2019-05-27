@@ -38,7 +38,7 @@ var guidoTable = function(params, callback) {
 	// Table pagination properties
 	this.page = params.page || 0;
 	this.currentPage = 1;
-	this.pageControls = params.pageControls || {position: ['bottom'], align: ['right']};
+	this.pageControls = params.pageControls || {position: ['bottom'], align: ['right'], export: {}};
 
 	// Instantiate our own logger
 	this.logger = new guidoLogger({app_name: 'Tables'});
@@ -55,14 +55,13 @@ var guidoTable = function(params, callback) {
 		this.filter.visible = false;
 	if (! this.filter.hasOwnProperty('css'))
 		this.filter.css = '';
+	if (! this.filter.hasOwnProperty('mass'))
+		this.filter.mass = false;
+	if (! this.filter.hasOwnProperty('massCB'))
+		this.filter.mcb = false;
 
 	// Header: create an ID if not assigned, enable columns if not specified, disable filter if not specified
-	if (! this.header.hasOwnProperty('id'))
-		this.header.id = 'tr' + this.uuid4();
-
 	for (var i=0; i < this.header.cells.length; i++) {
-		if (! this.header.cells[i].hasOwnProperty('id'))
-			this.header.cells[i].id = 'td' + this.uuid4();
 		if (! this.header.cells[i].hasOwnProperty('enabled'))
 			this.header.cells[i].enabled = true;
 		if (! this.header.cells[i].hasOwnProperty('filter'))
@@ -73,6 +72,8 @@ var guidoTable = function(params, callback) {
 			this.header.cells[i].filter.enabled = false;
 		if (! this.header.cells[i].filter.hasOwnProperty('value'))
 			this.header.cells[i].filter.value = '';
+		if (! this.header.cells[i].filter.hasOwnProperty('mode'))
+			this.header.cells[i].filter.mode = 'text';
 	}
 
 	// Rows: create an ID if not supplied
@@ -111,13 +112,12 @@ var guidoTable = function(params, callback) {
 		appRun.tables = {};
 	appRun.tables[this.id] = this;
 
-	// Render the form
+	// Render the table
 	if (params.div) {
 		this.div = params.div;
 		this.render(this.div);
 	}
 };
-
 
 /**
  * Render table
@@ -248,12 +248,22 @@ guidoTable.prototype.render = function (div) {
 		if (element)
 			element.innerHTML = html;
 
-		// Set listeners on the filter for the Enter key
+		// Filter actions
 		if (this.filter.visible) {
 			for (var i=0; i < this.header.cells.length; i++) {
-				if (this.header.cells[i].filter.enabled) {
-					$('#FLTR' + this.header.cells[i].filter.id).off('keydown', 'input');
-					$('#FLTR' + this.header.cells[i].filter.id).on('keydown', 'input', this.captureEnter);
+				if (! this.header.cells[i].filter.enabled)
+					continue;
+
+				if (this.header.cells[i].filter.mode == 'text') {
+					// Set listeners on the filter for the Enter key in input field
+					$('#' + this.header.cells[i].filter.id).off('keydown');
+					$('#' + this.header.cells[i].filter.id).on('keydown', this.captureEnter);
+				}
+
+				if (this.header.cells[i].filter.mode == 'image') {
+					// Set listeners on the icons for a click
+					$('#' + this.header.cells[i].filter.id).off('click');
+					$('#' + this.header.cells[i].filter.id).on('click', this.captureClick);
 				}
 			}
 		}
@@ -299,23 +309,27 @@ guidoTable.prototype.renderHeader = function () {
 
 	// Render filter
 	if (this.filter.enabled && this.filter.visible) {
-		html += '<tr><td></td>';
-
-		for (var i=0; i < this.header.cells.length; i++) {
-			html += '<td>';
-
-			if (this.header.cells[i].filter.enabled)
-				html += '<form id=FLTR' + this.header.cells[i].filter.id + 
-					' table_id=' + this.id + 
-					'><input id=' + this.header.cells[i].filter.id +
-					' type=text ' + 
-					' value="' + this.header.cells[i].filter.value + '"' +
-					this.cssHtml(this.asArray(this.filter.css)) + 
-					'></form>';
-
-			html += '</td>';
+		// First (filter) column with optional checkbox
+		html += '<tr><td>';
+		if (this.filter.mass) {
+			html += '<input id=MCB' + this.id + ' type=checkbox onClick="guidoTableFilterMCB(\'' + this.id + '\');"';
+			if (this.filter.mcb)
+				html += ' checked';
+			html += '>'
 		}
+		html += '</td>';
 
+		// Remaining columns
+		for (var i=0; i < this.header.cells.length; i++) {
+			if (this.header.cells[i].filter.enabled) {
+				if (this.header.cells[i].filter.mode == 'text')
+					html += '<td><input id=' + this.header.cells[i].filter.id +	' type=text value="' + this.header.cells[i].filter.value + '"' + this.cssHtml(this.asArray(this.filter.css)) + ' table_id="' + this.id + '"></td>';
+				if (this.header.cells[i].filter.mode == 'image')
+					html += '<td align=center><a href=javascript:void(0)><img id=' + this.header.cells[i].filter.id + ' src=# class="' + this.header.cells[i].filter.image + '" title="' + this.header.cells[i].filter.title + '" table_id="' + this.id + '"></a></td>';
+			}
+			else
+				html += '<td></td>';
+		}
 		html += '</tr>';
 	}
 
@@ -339,9 +353,17 @@ guidoTable.prototype.renderRow = function (row) {
 
 	var html = '<tr ' + this._renderCommon(row) + '>';
 
-	// If filter is enabled, insert empty column for the filter toggle (rendered in header row)
-	if (this.filter.enabled)
-		html += '<td></td>';
+	// If filter is enabled, insert column for the filter toggle (rendered in header row) - it will be empty or will contain chechboxes
+	if (this.filter.enabled) {
+		html += '<td>';
+		if (this.filter.visible && this.filter.mass) {
+			html += '<input type=checkbox id="CB' + row.id + '"';
+			if (this.filter.mcb)
+				html += ' checked';
+			html += '>';
+		}
+		html += '</td>';
+	}
 
 	for (var i=0; i<row.cells.length; i++) {
 		// See if this column is enabled for rendering in the header
@@ -654,6 +676,7 @@ guidoTable.prototype.getPageControls = function() {
 
 	var html = '';
 	var htmlPage = '';
+	var htmlExport = '';
 
 	// Calculate number of visible rows
 	var rowCnt = 0;
@@ -707,24 +730,35 @@ guidoTable.prototype.getPageControls = function() {
 		htmlPage += '... ';
 
 	// Show L
-//	if (this.currentPage != pageL)
 	if (this.currentPage < pageL)
 		htmlPage += '<a href=javascript:void(0) onClick="guidoTablePage(\'' + this.id + '\', ' + pageL + ')";>' + pageL + '</a> ';
 
-	// Assenble a table row with controls on left, right or both
+	// Prepare export controls
+	if (this.pageControls.export) {
+		if (this.pageControls.export.csv && this.pageControls.export.csv.enabled)
+			htmlExport += ' <a href=javascript:void(0) onClick=guidoTableExportCsv(\'' + this.id + '\')>CSV</a> ';
+		if (this.pageControls.export.xls && this.pageControls.export.xls.enabled)
+			htmlExport += ' <a href=javascript:void(0) onClick=guidoTableExportXls(\'' + this.id + '\')>XLS</a> ';
+	}
+
+	// Assemble a table row with controls on left, right or both
 	html += '<tr><td align=left ';
 	html += this.cssHtml(this.asArray(this.pageControls.css));
 	html += '>';
 	for (var i=0; i<this.pageControls.align.length; i++) {
-		if (this.pageControls.align[i] == 'left')
+		if (this.pageControls.align[i] == 'left') {
 			html += htmlPage;
+			html += htmlExport;
+		}
 	}
 	html += '</td><td align=right ';
 	html += this.cssHtml(this.asArray(this.pageControls.css));
 	html += '>';
 	for (var i=0; i<this.pageControls.align.length; i++) {
-		if (this.pageControls.align[i] == 'right')
+		if (this.pageControls.align[i] == 'right') {
+			html += htmlExport;
 			html += htmlPage;
+		}
 	}
 	html += '</td></tr>';
 
@@ -818,6 +852,47 @@ guidoTable.prototype.filterHide = function() {
 };
 
 /**
+ * Run filter mass action
+ */
+guidoTable.prototype.filterMass = function(id) {
+	this.logger.debug("Entering function filterMass()...");
+
+	var selected = [];
+
+	// Loop around rows and see where we have checkboxes on
+	for (var i=0; i<this.rows.length; i++) {
+		if (! this.rows[i].enabled)
+			continue;
+
+		// Get checkboxes (NB: only current page will have them!)
+		var el = document.getElementById('CB' + this.rows[i].id);
+		if (el && el.checked)
+			selected.push(i);
+	}
+	
+	if (! selected.length)
+		return;
+
+	// Find the callback
+	var callback = null;
+	for (var i=0; i<this.header.cells.length; i++) {
+		if (this.header.cells[i].filter.id == id) {
+			callback = this.header.cells[i].filter.callback;
+			break;
+		}
+	}
+
+	if (! callback)
+		return;
+
+	// Invoke the callback as string or real function
+	if (typeof callback == 'function')
+		callback(selected);
+	else if (typeof window[callback] == 'function')
+		window[callback](selected);
+};
+
+/**
  * Capture Enter key for filter
  */
 
@@ -827,8 +902,150 @@ guidoTable.prototype.captureEnter = function(event) {
 
 	event.preventDefault();
 
-	var tableId = $(event.target.form).attr('table_id');
+	var tableId = $(event.target).attr('table_id');
 	appRun.tables[tableId].filterRun();
+};
+
+/**
+ * Capture mouse click for filter
+ */
+
+guidoTable.prototype.captureClick = function(event) {
+	event.preventDefault();
+
+	var tableId = $(event.target).attr('table_id');
+	var id = $(event.target).attr('id');
+	appRun.tables[tableId].filterMass(id);
+};
+
+/**
+ * Prepare export
+ */
+
+guidoTable.prototype.exportPrepare = function() {
+	this.logger.debug("Entering function exportPrepare()...");
+
+	var ret = {
+		header: [],
+		rows: [],
+	};
+
+	// Copy header (only columns that are set visible)
+	for (var i=0; i < this.header.cells.length; i++) {
+		if (this.header.cells[i].enabled && this.header.cells[i].export)
+			ret.header.push(this.header.cells[i].content);
+	}
+
+	// Copy cells (only rows that are set visible)
+	for (var i=0; i < this.rows.length; i++) {
+		if (! this.rows[i].enabled)
+			continue;
+
+		var row = [];
+		for (var j=0; j < this.rows[i].cells.length; j++) {
+			// See if this column is enabled for rendering in the header
+			if (this.header.cells[j].enabled && this.header.cells[j].export) {
+				// Add directly or pass through the onRender function first
+				if (this.header.cells[j].hasOwnProperty('onRender'))
+					row.push(this.header.cells[j].onRender(this.rows[i].cells[j].content));
+				else
+					row.push(this.rows[i].cells[j].content);
+			}
+		}
+		ret.rows.push(row);
+	}
+
+	return ret;
+};
+
+/**
+ * Export to XLS
+ */
+guidoTable.prototype.exportXls = function() {
+	this.logger.debug("Entering function exportXls()...");
+
+	if (! this.pageControls.export.xls)
+		return;
+	if (! this.pageControls.export.xls.enabled)
+		return;
+	if (! this.pageControls.export.xls.url)
+		return;
+
+	var data = this.exportPrepare();
+
+	var self = this;
+
+	// Submit to API
+	var jqXHR = $.ajax({
+		type: 'POST',
+		url: this.pageControls.export.xls.url,
+		data: {q: JSON.stringify({data: data})},
+		beforeSend: function (request, settings) {
+			// Prepare to read binary data!
+			settings.xhr().responseType = 'arraybuffer';
+			settings.processData = false;
+			if (typeof self.pageControls.export.xls.beforeSend == 'function')
+				self.pageControls.export.xls.beforeSend(request, settings);
+			if (typeof window[self.pageControls.export.xls.beforeSend] == 'function')
+				window[self.pageControls.export.xls.beforeSend](request, settings);
+		},
+	})
+	.done(function(data) {
+		if (typeof self.pageControls.export.xls.callback == 'function')
+			self.pageControls.export.xls.callback(null, data);
+		else if (typeof window[self.pageControls.export.xls.callback] == 'function')
+			window[self.pageControls.export.xls.callback](null, data);
+		else {
+			var blob = new Blob([data], {type: "application/vnd.ms-excel"});
+			saveAs(blob, "table-" + self.id + ".xlsx");
+		}
+ 	})
+	.fail(function() {
+		if (typeof self.pageControls.export.xls.callback == 'function')
+			self.pageControls.export.xls.callback(jqXHR);
+		else if (typeof window[self.pageControls.export.xls.callback] == 'function')
+			window[self.pageControls.export.xls.callback](jqXHR);
+	});
+};
+
+/**
+ * Export to CSV
+ */
+guidoTable.prototype.exportCsv = function() {
+	this.logger.debug("Entering function exportCsv()...");
+
+	if (! this.pageControls.export.csv)
+		return;
+	if (! this.pageControls.export.csv.enabled)
+		return;
+
+	var data = this.exportPrepare();
+
+	var dataOut = '';
+
+	// Header
+	for (var i=0; i < data.header.length; i++) {
+		dataOut += '"' + data.header[i] + '"';
+		if (i < (data.header.length -1))
+			dataOut += ',';
+		else
+			dataOut += '\r\n';
+	}
+
+	// Cells
+	for (var i=0; i < data.rows.length; i++) {
+		for (var j=0; j < data.rows[i].length; j++) {
+			dataOut += '"' + data.rows[i][j] + '"';
+			if (j < (data.rows[i].length -1))
+				dataOut += ',';
+			else
+				dataOut += '\r\n';
+		}
+	}
+
+//	var blob = new Blob([dataOut], {type: "text/csv;charset=utf-8"});
+	var blob = new Blob([dataOut], {type: "text/csv"});
+	saveAs(blob, "table-" + this.id + ".csv");
 };
 
 if (typeof module !== 'undefined' && typeof module.exports !== 'undefined')

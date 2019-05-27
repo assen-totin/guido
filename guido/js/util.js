@@ -3,7 +3,7 @@
  * 
  * @author Assen Totin assen.totin@gmail.com
  * 
- * Created for the GUIdo project, copyright (C) 2014 Assen Totin, assen.totin@gmail.com 
+ * Created for the GUIdo project, copyright (C) 2014-2019 Assen Totin, assen.totin@gmail.com 
  * 
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -408,6 +408,37 @@ function guidoTableFilter(tableId, status) {
 function guidoTableEllipse(cellId, content) {
 	var el = document.getElementById(cellId);
 	el.innerHTML = content;
+};
+
+/**
+ * Process the master checkbox in a Guildo table filter
+ */
+function guidoTableFilterMCB(id) {
+	// See if the toggle is on or off
+	var el = document.getElementById('MCB' + id);
+
+	// Set the toggle in table
+	if (el.checked)
+		appRun.tables[id].filter.mcb = true;
+	else
+		appRun.tables[id].filter.mcb = false;
+
+	// Re-render the table
+	appRun.tables[id].render();
+};
+
+/**
+ * Export data to XLS
+ */
+function guidoTableExportXls(id) {
+	appRun.tables[id].exportXls();
+};
+
+/**
+ * Export data to CSV
+ */
+function guidoTableExportCsv(id) {
+	appRun.tables[id].exportCsv();
 };
 
 /**

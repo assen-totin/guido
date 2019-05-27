@@ -202,7 +202,7 @@ function(error, result);
 Field types:
 - INPUT: creates an INPUT field. You must supply at least name=XXX and type={text|password|hidden} in 'attributes' property. Do NOT use type=submit; use BUTTON field instead.
 - TEXTAREA: creates an TEXTAREA field. You must supply at least name=XXX in 'attributes' property. To set text inside the area, supply text=XXX in 'extra' property
-- CHECKBOX: creates a CHECKBOX field. You must supply at least name=XXX in 'attributes' property. No need to suppliy type=checkbox. If you want the checkbox checked, supply smth=['checked'] in 'attributes' property. 
+- CHECKBOX: creates a CHECKBOX field. You must supply at least name=XXX in 'attributes' property. No need to suppliy type=checkbox. If you want the checkbox checked, supply selected=true in 'extra' property. 
 - SELECT: creates a SELECT field. You must supply at least name=XXX in 'attributes' property. Options are supplied as array of objects in the 'extra' property; each of them must have a property 'value' (the value of the option in HTML sense) and a 'text' property (visible in the drop-down on screen). To have an option selected, send its value in the 'default' property of the 'extra' property. If you specify extra.multiple=true, a multi-options select is created and the returned value is an array.
 - RADIO: creates radio buttons from a single field. You must supply at least name=XXX in 'attributes' property. No need to suppliy type=radio. Options are supplied as array of objects in the 'extra' property; each of them must have a property 'value' (the value of the option in HTML sense) and a 'text' property (shown as label after the radio button). To have an option selected, send its value in the 'default' property of the 'extra' property.
 - BUTTON: creates an BUTTON field. You must supply at least type=button in 'attributes' property. To set the text of the button, supply text=XXX in 'extra' property. Do NOT use type=submit as browsers may try to submit and/or re-render the page! If you want the button to have its own custom function, supply it (or, better, its name) in the extra.action property; to process the form, use the special built-in funciton 'submit'.
@@ -272,7 +272,7 @@ var params = {
 	},
 	// Size of the page in rows. Set to 0 or leave out to disable pagination.
 	page: int,
-	// Define whether pagination controls will be used and how they look. 
+	// Define whether pagination and export controls will be used and how they look. 
 	pageConrols: {
 		// Locations where to show pagination controls, one or more of 'top', 'bottom'.
 		position: [],
@@ -280,6 +280,21 @@ var params = {
 		align: [],
 		// CSS classes to apply to pagination controls (will NOT inherit the CSS of the table!)
 		css: [],
+		// Export properties
+		export: {
+			csv: {
+				enabled: true || false
+			},
+			xls: {
+				enabled: true || false,
+				// URL to send the data for XLS creation. Data object is: {header:[], rows: [[], []...]}
+				url: '',
+				// Function (or its name) to give jQuery as AJAX beforeSend. 
+				beforeSend: func() || '',
+				// Callback function (or its name) to invoke when the data arrives; gets called as func(err, res)
+				callback: func() || '',
+			}
+		}
 	},
 	// Filter control
 	filter: {
@@ -289,6 +304,8 @@ var params = {
 		visible: bool,
 		// CSS classes that will be applied to each cell in the filter. 
 		css: [] || '',
+		// Mass actions toggle
+		mass: true || false,
 	},
 	// Header row, if needed
 	header: {
@@ -317,11 +334,20 @@ var params = {
 				// Filter for the column.
 				filter: {
 					// Whether the column has filter. Default false.
-					enabled: bool
+					enabled: bool,
 					// The ID of the filter for this column. A random one will be generated if missing.
 					id: '',
-					// The value of the filter. Default empty string.
+					// The mode: test (default) or image
+					mode: 'text' || 'image',
+					// The value of the filter if mode is 'text'. Default empty string.
 					value: '',
+					// The name of the image if mode is 'image'
+					image: '', 
+					// The ALT text for the image if mode is 'image'
+					title: '', 
+					// Function (or its name) to invoke when the image is clicked - if mode is 'image'. 
+					// Argument will be an array, containing the indexes of the rows that were checked
+					callback: func() || '',
 				},
 				// Function to apply to the contents of all cells in the column when rendering.
 				// Used only if the cell itself does not define an onRender() function
