@@ -346,7 +346,7 @@ var params = {
 					// The ALT text for the image if mode is 'image'
 					title: '', 
 					// Function (or its name) to invoke when the image is clicked - if mode is 'image'. 
-					// Argument will be an array, containing the indexes of the rows that were checked
+					// Argument will be an array, containing the internal IDs of the rows that were checked
 					callback: func() || '',
 				},
 				// Function to apply to the contents of all cells in the column when rendering.

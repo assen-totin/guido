@@ -867,7 +867,7 @@ guidoTable.prototype.filterMass = function(id) {
 		// Get checkboxes (NB: only current page will have them!)
 		var el = document.getElementById('CB' + this.rows[i].id);
 		if (el && el.checked)
-			selected.push(i);
+			selected.push(this.rows[i].id);
 	}
 	
 	if (! selected.length)
