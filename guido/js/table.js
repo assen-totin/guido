@@ -194,7 +194,7 @@ guidoTable.prototype.render = function (div) {
 	// If we need pagination on top, show it (in a wrapping table)
 	if (htmlPage) {
 		html += '<table border=0 cellspacing=0 cellpadding=0 ';
-		html += this.cssHtml(this.asArray(this.css));
+		html += this.cssHtml(this.css);
 		html += '>';
 		for (var i=0; i<this.pageControls.position.length; i++) {
 			if (this.pageControls.position[i] == 'top')
@@ -206,7 +206,7 @@ guidoTable.prototype.render = function (div) {
 	// Prepape TABLE tag
 	html += '<table name="' + this.name + '" id="' + this.id + '" ';
 
-	html += this.cssHtml(this.asArray(this.css));
+	html += this.cssHtml(this.css);
 
 	html += '>';
 
@@ -322,10 +322,12 @@ guidoTable.prototype.renderHeader = function () {
 		// Remaining columns
 		for (var i=0; i < this.header.cells.length; i++) {
 			if (this.header.cells[i].filter.enabled) {
+				html += '<td ' + this.cssHtml(this.filter.css) + '>';
 				if (this.header.cells[i].filter.mode == 'text')
-					html += '<td><input id=' + this.header.cells[i].filter.id +	' type=text value="' + this.header.cells[i].filter.value + '"' + this.cssHtml(this.asArray(this.filter.css)) + ' table_id="' + this.id + '"></td>';
-				if (this.header.cells[i].filter.mode == 'image')
-					html += '<td align=center><a href=javascript:void(0)><img id=' + this.header.cells[i].filter.id + ' src=# class="' + this.header.cells[i].filter.image + '" title="' + this.header.cells[i].filter.title + '" table_id="' + this.id + '"></a></td>';
+					html += '<input id=' + this.header.cells[i].filter.id +	' type=text value="' + this.header.cells[i].filter.value + '"' + this.cssHtml(this.header.cells[i].filter.css) + ' table_id="' + this.id + '">';
+				else if (this.header.cells[i].filter.mode == 'image')
+					html += '<span ' + this.cssHtml(this.header.cells[i].filter.css) + '><a href=javascript:void(0)><img id=' + this.header.cells[i].filter.id + ' src=# class="' + this.header.cells[i].filter.image + '" title="' + this.header.cells[i].filter.title + '" table_id="' + this.id + '"></a></span>';
+				html += '</td>';
 			}
 			else
 				html += '<td></td>';
@@ -453,7 +455,7 @@ guidoTable.prototype._renderCommon = function (item) {
 	html += 'id="' + item.id + '" ';
 
 	// Attach CSS
-	html += this.cssHtml(this.asArray(item.css, item.cssExtra));
+	html += this.cssHtml(item.css, item.cssExtra);
 
 	// Attach colspan/rowspan
 	if (item.rowspan)
@@ -610,10 +612,12 @@ guidoTable.prototype.cssHtml = function(css) {
 	if (!css)
 		return '';
 
+	var cssHtml = this.asArray(css);
+
 	var html = 'class="';
 
-	for (var i=0; i<css.length; i++)
-		html += css[i] + ' ';
+	for (var i=0; i < cssHtml.length; i++)
+		html += cssHtml[i] + ' ';
 
 	html += '" ';
 
@@ -743,7 +747,7 @@ guidoTable.prototype.getPageControls = function() {
 
 	// Assemble a table row with controls on left, right or both
 	html += '<tr><td align=left ';
-	html += this.cssHtml(this.asArray(this.pageControls.css));
+	html += this.cssHtml(this.pageControls.css);
 	html += '>';
 	for (var i=0; i<this.pageControls.align.length; i++) {
 		if (this.pageControls.align[i] == 'left') {
@@ -752,7 +756,7 @@ guidoTable.prototype.getPageControls = function() {
 		}
 	}
 	html += '</td><td align=right ';
-	html += this.cssHtml(this.asArray(this.pageControls.css));
+	html += this.cssHtml(this.pageControls.css);
 	html += '>';
 	for (var i=0; i<this.pageControls.align.length; i++) {
 		if (this.pageControls.align[i] == 'right') {

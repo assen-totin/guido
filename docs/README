@@ -345,6 +345,10 @@ var params = {
 					image: '', 
 					// The ALT text for the image if mode is 'image'
 					title: '', 
+					// The CSS class(ess) to be applied to each element in the filter's cell:
+					// - to the INPUT element if mode is 'text' or,
+					// - to a SPAN wrapping the image if mode is 'image'
+					css: [] || '',
 					// Function (or its name) to invoke when the image is clicked - if mode is 'image'. 
 					// Argument will be an array, containing the internal IDs of the rows that were checked
 					callback: func() || '',
