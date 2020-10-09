@@ -821,7 +821,7 @@ guidoTable.prototype.filterRun = function() {
 			if (! this.header.cells[j].filter.value)
 				continue;
 
-			if (this.rows[i].cells[j].content.toLowerCase().indexOf(this.header.cells[j].filter.value.toLowerCase()) < 0) {
+			if (this.rows[i].cells[j].content.toString().toLowerCase().indexOf(this.header.cells[j].filter.value.toString().toLowerCase()) < 0) {
 				this.rows[i].enabled = false;
 				break;
 			}	
