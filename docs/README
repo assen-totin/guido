@@ -135,7 +135,7 @@ params = {
 				// The HTML name of the field. Mandatory.
 				name: '',
 				// Other attributes may be mandatory depending on field type.
-				// Do NOT use 'value' or 'checked' as they will be ignored; use the 'extra' propery below for them.
+				// Attributes that take no value should be set to 1 (i.e. readonly: 1).
 				...
 			},
 			// Extra type-specific extra options

@@ -417,8 +417,12 @@ guidoForm.prototype._renderCommon = function (field) {
 	var html = ' ';
 
 	var keys = Object.keys(field.attributes);
-	for(var i=0; i<keys.length; i++)
-		html += keys[i] + '="' + field.attributes[keys[i]] + '" ';
+	for (var i=0; i<keys.length; i++) {
+		if (field.attributes[keys[i]] == 1)
+			html += keys[i] + ' ';
+		else
+			html += keys[i] + '="' + field.attributes[keys[i]] + '" ';
+	}
 
 	// Attach CSS
 	/*
@@ -542,7 +546,7 @@ guidoForm.prototype.renderTextarea = function (field) {
  * Render SELECT
  */
 guidoForm.prototype.renderSelect = function (field) {
-	this.logger.debug("Entering function renderSelect()...");
+	this.logger.debug("Entering function renderSelect()...");_
 	var html = '';
 
 	// Render as INPUT + DATALIST or regular SELECT (with optional multiple selection)
