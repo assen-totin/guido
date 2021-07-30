@@ -407,7 +407,7 @@ guidoTable.prototype.renderCell = function (cell, columnId, isHeader) {
 				// Check if we need to ellipsize
 				if (cell.contentEllipse) {
 					html += cell.contentEllipse;
-					html += '<a href=javascript:void(0) onClick="guidoTableEllipse(\'' + cell.id + '\',\'' + cell.content + '\')">';
+					html += '<a href=javascript:void(0) onClick="guidoTableEllipse(\'' + cell.id + '\',\'' + btoa(cell.content) + '\')">';
 					html += (cell.ellipse) ? cell.ellipse : ' more...';
 					html += '</a>';
 				}
@@ -580,7 +580,7 @@ guidoTable.prototype.uuid4 = function() {
  * Convert string to array with one element
  * Useful when one or more values are acceptable per property.
  */
-guidoTable.prototype.asArray = function(data, data2) {
+guidoTable.prototype.asArray = function(data) {
 	var ret = [];
 
 	if (data) {
@@ -592,15 +592,6 @@ guidoTable.prototype.asArray = function(data, data2) {
 			ret.push(data);
 	}
 
-	if (data2) {
-		if (data2.constructor == Array) {
-			for (var i=0; i<data2.length; i++)
-				ret.push(data2[i]);
-		}
-		else
-			ret.push(data2);
-	}
-
 	return ret;
 };
 
@@ -608,11 +599,10 @@ guidoTable.prototype.asArray = function(data, data2) {
 /**
  * Compose CSS class list for HTML
  */
-guidoTable.prototype.cssHtml = function(css) {
-	if (!css)
-		return '';
-
+guidoTable.prototype.cssHtml = function(css, cssExtra) {
 	var cssHtml = this.asArray(css);
+	if (cssExtra)
+		cssHtml.push(cssExtra);
 
 	var html = 'class="';
 
@@ -828,7 +818,7 @@ guidoTable.prototype.filterRun = function() {
 		}
 	}
 
-	// Re-render the form
+	// Re-render the table
 	this.render();
 };
 
@@ -996,9 +986,9 @@ guidoTable.prototype.exportXls = function() {
 	})
 	.done(function(data) {
 		if (typeof self.pageControls.export.xls.callback == 'function')
-			self.pageControls.export.xls.callback(null, data);
+			self.pageControls.export.xls.callback(null, data, self.pageControls.export.xls.filename);
 		else if (typeof window[self.pageControls.export.xls.callback] == 'function')
-			window[self.pageControls.export.xls.callback](null, data);
+			window[self.pageControls.export.xls.callback](null, data, self.pageControls.export.xls.filename);
 		else {
 			var blob = new Blob([data], {type: "application/vnd.ms-excel"});
 			saveAs(blob, "table-" + self.id + ".xlsx");
@@ -1047,9 +1037,12 @@ guidoTable.prototype.exportCsv = function() {
 		}
 	}
 
+	// Filename
+	var filename = (this.pageControls.export.xls.filename) ? this.pageControls.export.xls.filename : "table-" + this.id + ".csv";
+
 //	var blob = new Blob([dataOut], {type: "text/csv;charset=utf-8"});
 	var blob = new Blob([dataOut], {type: "text/csv"});
-	saveAs(blob, "table-" + this.id + ".csv");
+	saveAs(blob, filename);
 };
 
 if (typeof module !== 'undefined' && typeof module.exports !== 'undefined')

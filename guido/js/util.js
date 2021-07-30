@@ -211,6 +211,16 @@ function guidoDeepCopyObject(source, destination, skipFunctions) {
 };
 
 /**
+ * Copy an array
+ * @param source Array The array to copy
+ * @param destination Array An empty array where the copy will be made
+ */
+function guidoCopyArray(source, destination) {
+	for (var i=0; i < source.length; i++)
+		destination[i] = source[i];
+};
+
+/**
  * Check if an object contains another
  * @param needle Object The object to check for
  * @param haystack Object The object to check into
@@ -407,7 +417,7 @@ function guidoTableFilter(tableId, status) {
 
 function guidoTableEllipse(cellId, content) {
 	var el = document.getElementById(cellId);
-	el.innerHTML = content;
+	el.innerHTML = atob(content);
 };
 
 /**

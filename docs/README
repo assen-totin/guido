@@ -135,7 +135,7 @@ params = {
 				// The HTML name of the field. Mandatory.
 				name: '',
 				// Other attributes may be mandatory depending on field type.
-				// Attributes that take no value should be set to 1 (i.e. readonly: 1).
+				// Attributes that take no value should be set to the string 'GUIDO_FORM_ON' (i.e. readonly='GUIDO_FORM_ON').
 				...
 			},
 			// Extra type-specific extra options

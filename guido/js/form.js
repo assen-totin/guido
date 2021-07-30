@@ -33,20 +33,41 @@ var guidoForm = function(params, callback) {
 
 	// Set default enabled
 	var fields = Object.keys(this.fields);
-	for (var i=0; i<fields.length; i++) {
+	for (var i=0; i < fields.length; i++) {
 		this.fields[fields[i]].filtered = false;
 		if (! this.fields[fields[i]].hasOwnProperty('enabled'))
 			this.fields[fields[i]].enabled = true;
 	}
 
 	// Create an ID if not supplied (also for multiField)
-	for (var i=0; i<fields.length; i++) {
+	for (var i=0; i < fields.length; i++) {
+		if (! this.fields[fields[i]].hasOwnProperty('id'))
+			this.fields[fields[i]].id = 'g' + this.uuid4();;
 		if (! this.fields[fields[i]].hasOwnProperty('attributes'))
 			this.fields[fields[i]].attributes = {};
 		if (! this.fields[fields[i]].attributes.hasOwnProperty('id'))
 			this.fields[fields[i]].attributes.id = 'f' + this.uuid4();
 		if (this.fields[fields[i]].multiField)
-			this.fields[fields[i]].multiField = 'mf' + this.uuid4();
+			this.fields[fields[i]].multiField.id = 'mf' + this.uuid4();
+	}
+
+	// If rendering a form with multiple values per INPUT, convert them to multifield
+	// For this, remove the array and produce a multiField
+	for (var i=0; i < fields.length; i++) {
+		if (this.fields[fields[i]].type == 'INPUT') {
+			if (this.fields[fields[i]].extra && this.fields[fields[i]].extra.text && this.fields[fields[i]].extra.text.sort) {
+				var tmpText = [];
+				guidoCopyArray(this.fields[fields[i]].extra.text, tmpText);
+
+				this.fields[fields[i]].extra.text = tmpText[0];
+
+				if (! this.fields[fields[i]].multiField)
+					this.fields[fields[i]].multiField = {};
+
+				for (var j=1; j < tmpText.length; j++)
+					this.multiFormAdd(this.fields[fields[i]].attributes.id, tmpText[j]);
+			}
+		}
 	}
 
 	// Form validator
@@ -78,17 +99,7 @@ guidoForm.prototype.validate = function () {
 	// Populate the fields in the object with their values form the form and fetch them here
 	this.readValues();
 
-	// Check if external validator was supplied and call it
-	// NB! The external validator for the full form must return FALSE if everything passed! Every TRUE value will be considered failure and will be passed back to the callback as error!
-	if (typeof this.validator.validate == 'function') {
-		error = this.validator.validate(this);
-		if (error)
-			return this.callback(error, null);
-		else
-			return this.callback(null, this.getFormData());
-	}
-
-	// Run internal validation loop
+	// Run field validation loop
 	var fields = Object.keys(this.fields);
 	for (i=0; i<fields.length; i++) {
 		var field = this.fields[fields[i]];
@@ -110,7 +121,17 @@ guidoForm.prototype.validate = function () {
 		}
 	}
 
-	//NB! Re-read the form data values since the validator may have converted them (int to string, for esample)
+	// Check if external validator was supplied and call it
+	// NB! The external validator for the full form must return FALSE if everything passed! Every TRUE value will be considered failure and will be passed back to the callback as error!
+	if (typeof this.validator.validate == 'function') {
+		error = this.validator.validate(this);
+		if (error)
+			return this.callback(error, null);
+		else
+			return this.callback(null, this.getFormData());
+	}
+
+	// NB! Re-read the form data values since the validator may have converted them (int to string, for esample)
 	return this.callback(null, this.getFormData());
 };
 
@@ -355,7 +376,7 @@ guidoForm.prototype.render = function (div) {
 
 
 /**
- * Render form
+ * Render field
  */
 guidoForm.prototype.renderField = function (field) {
 	this.logger.debug("Entering function renderField()...");
@@ -417,8 +438,9 @@ guidoForm.prototype._renderCommon = function (field) {
 	var html = ' ';
 
 	var keys = Object.keys(field.attributes);
-	for (var i=0; i<keys.length; i++) {
-		if (field.attributes[keys[i]] == 1)
+	for(var i=0; i<keys.length; i++) {
+		// Handle attributes that have no value - we set them the value "1" in GUIdo
+		if (field.attributes[keys[i]] == 'GUIDO_TRUE')
 			html += keys[i] + ' ';
 		else
 			html += keys[i] + '="' + field.attributes[keys[i]] + '" ';
@@ -454,8 +476,7 @@ guidoForm.prototype._renderCommon = function (field) {
 guidoForm.prototype.renderInput = function (field) {
 	this.logger.debug("Entering function renderInput()...");
 
-	// Copy the value as atribute if it had been read (e.g., when re-rendering)
-	// - or use a default if specified
+	// Copy the value as attribute if it had been read (e.g., when re-rendering) - or use a default if specified
 	if (field.value)
 		field.attributes.value = field.value;
 	else if (field.extra && field.extra.text)
@@ -467,7 +488,7 @@ guidoForm.prototype.renderInput = function (field) {
 
 	// Attach extra
 	if (field.extra && field.extra.submitOnEnter)
-		html += ' guidoExtra=submitOnEnter';
+		html += ' guidoSubmit=submitOnEnter';
 
 	if (field.attributes.type && (field.attributes.type == 'submit')) {
 		html += ' onClick="appRun.forms.' + this.id + '.validator()"';
@@ -476,21 +497,44 @@ guidoForm.prototype.renderInput = function (field) {
 
 	html += '>';
 
+	var cssInput = this.cssHtml(this.asArray(field.cssInput));
+
+	// Specials for password fields
+	if (field.attributes.type == 'password') {
+		// Attach "show password" button
+		if (field.extra && field.extra.toggle && field.extra.toggle.enabled) {
+			var cssEye = this.cssHtml(this.asArray(field.extra.toggle.cssInput));
+			html += '<span ' + cssEye  + '>';
+			html += ' <a href=javascript:void(0) style="text-decoration:none;" onClick="appRun.forms.' + this.id + '.togglePassword(\'' + field.attributes.id + '\')">👁</a> ';
+			html += '</span>';
+		}
+	}
+
+	// Attach "generate password" button
+	if (field.generator && field.generator.enabled) {
+		var cssButton = this.cssHtml(this.asArray(field.generator.cssInput));
+		html += ' <span ' + cssButton + '> <button type=button onClick="appRun.forms.' + this.id + '.generatePassword(\'' + field.attributes.id + '\', \'' + field.id + '\')">' + _("Generate") + '</button></span>';
+	}
+
 	// Multi-field INPUTs
 	if (field.multiField) {
-		var css = this.cssHtml(this.asArray(field.cssInput));
-
 		// Check how many rows of this type we have (the last row should not have the removal button [-])
 		var counter = 0;
 		var fields = Object.keys(this.fields);
 		for (var i=0; i<fields.length; i++) {
-			if ((this.fields[fields[i]].multiField) && (this.fields[fields[i]].multiField == field.multiField))
+			if ((this.fields[fields[i]].multiField) && (this.fields[fields[i]].multiField.id == field.multiField.id))
 				counter++;
 		}
 
-		html += '<button type=button ' + css + ' onClick="appRun.forms.' + this.id + '.multiFormAdd(\'' + field.attributes.id + '\')">+</button>';
-		if (counter > 1)
-			html += '<button type=button ' + css + ' onClick="appRun.forms.' + this.id + '.multiFormDel(\'' + field.attributes.id + '\')">-</button>';
+		cssMF = this.cssHtml(this.asArray(field.multiField.cssInput));
+		cssSpacer = this.cssHtml(this.asArray(field.multiField.cssSpacer));
+
+		html += '<span ' + cssSpacer  + '>&nbsp;</span>';
+		html += '<button type=button ' + cssMF + ' onClick="appRun.forms.' + this.id + '.multiFormAdd(\'' + field.attributes.id + '\', 0, 1)">+</button>';
+		if (counter > 1) {
+			html += '<span ' + cssSpacer  + '>&nbsp;</span>';
+			html += '<button type=button ' + cssMF + ' onClick="appRun.forms.' + this.id + '.multiFormDel(\'' + field.attributes.id + '\')">-</button>';
+		}
 	}
 
 	return html;
@@ -546,7 +590,7 @@ guidoForm.prototype.renderTextarea = function (field) {
  * Render SELECT
  */
 guidoForm.prototype.renderSelect = function (field) {
-	this.logger.debug("Entering function renderSelect()...");_
+	this.logger.debug("Entering function renderSelect()...");
 	var html = '';
 
 	// Render as INPUT + DATALIST or regular SELECT (with optional multiple selection)
@@ -565,7 +609,7 @@ guidoForm.prototype.renderSelect = function (field) {
 		html += '<input list=' + field.extra.datalist + ' ';
 		html += this._renderCommon(field);
 		if (field.extra.submitOnEnter)
-			html += ' guidoExtra=submitOnEnter';
+			html += ' guidoSubmit=submitOnEnter';
 		html += '>';
 	}
 	else {
@@ -760,45 +804,29 @@ guidoForm.prototype.setEnabled = function(id, enabled) {
 	this.logger.debug("Entering function setEnabled()...");
 
 	var fields = Object.keys(this.fields);
-
-	for (var i=0; i<fields.length; i++) {
+	for (var i=0; i < fields.length; i++) {
 		var field = this.fields[fields[i]];
-		if (field.attributes.id == id) {
+
+		// Check on ID from attributes (unique per every field)
+		if (field.attributes.id == id)
 			field.enabled = enabled;
 
-/*
-			var element = document.getElementById(field.divId);
-			element.innerHTML = (enabled) ? this.renderField(field) : '';
-
-			// Strip CSS tags from the DIV of this field
-			// (useful when doing a show/hide of two fields in the same visual space)
-			if (field.stripCssField)
-				element.className = '';
-
-			// Attach back CSS to DIV if it was stripped
-			if (enabled && field.stripCssField && field.cssField) {
-				var cssField = this.asArray(field.cssField);
-				for(var i=0; i < cssField.length; i++) {
-					if (element.className.indexOf(cssField[i]) == -1)
-						element.className += ' ' + cssField[i];
-				}
-			}
-*/
-			// Re-render the form
-			this.render();
-
-			break;
-		}
+		// Check on ID of the field (will be the same on multifields)
+		if (field.id == id)
+			field.enabled = enabled;
 	}
+
+	// Re-render the form
+	this.render();
 };
 
 /**
  * Add multi-form input
  */
-guidoForm.prototype.multiFormAdd = function(id) {
+guidoForm.prototype.multiFormAdd = function(id, value, render) {
 	var fields = Object.keys(this.fields);
 
-	for (var i=0; i<fields.length; i++) {
+	for (var i=0; i < fields.length; i++) {
 		var field = this.fields[fields[i]];
 		if (field.attributes.id == id) {
 			// Deep copy into new field
@@ -807,16 +835,21 @@ guidoForm.prototype.multiFormAdd = function(id) {
 
 			// Increment order, generate new ID
 			newField.order ++;
-			newId = 'f' + this.uuid4();
+			var newId = 'f' + this.uuid4();
 
 			if (newField.attributes)
 				newField.attributes.id = newId;
 
+			// Set value if given
+			if (value)
+				newField.extra.text = value;
+
 			// Attach to the form
 			this.fields[newId] = newField;
 
-			// Re-render the form
-			this.render();
+			// Re-render the form if asked
+			if (render)
+				this.render();
 
 			break;
 		}
@@ -893,9 +926,9 @@ guidoForm.prototype.captureEnter = function(event) {
 	// Get the form ID so that we may reach it
 	var formId = $(event.target.form).attr('id');
 
-	// Check if we have "guidoExtra" in this field
-	var guidoExtra = $(event.target).attr("guidoExtra");
-	if (guidoExtra)
+	// Check if we have "guidoSubmit" in this field
+	var guidoSubmit = $(event.target).attr("guidoSubmit");
+	if (guidoSubmit)
 		// Submit form
 		guidoRun.forms[formId].validate();
 	else {
@@ -932,6 +965,58 @@ guidoForm.prototype.captureEnter = function(event) {
 		// Move focus to next input field
 		$('#' + nextId).focus();
     }
+};
+
+/**
+ * Toggle password visibility for INPUT fieds
+ */
+guidoForm.prototype.togglePassword = function(elPasswordId) {
+	var elPassword = document.getElementById(elPasswordId);
+
+	if (elPassword.type == 'password')
+		elPassword.type = 'text';
+	else
+		elPassword.type = 'password';
+};
+
+/**
+ * Generate password for INPUT fieds and set field to plain text
+ */
+guidoForm.prototype.generatePassword = function(elPasswordId, fieldId) {
+	var elPassword = document.getElementById(elPasswordId);
+
+	// Field field by the provided passwordId
+	var field = null;
+	var fields = Object.keys(this.fields);
+	for (var i=0; i < fields.length; i++) {
+		if (this.fields[fields[i]].id == fieldId) {
+			field = this.fields[fields[i]];
+			break;
+		}
+	}
+
+	// Show the text in the password field (if not visible already)
+	if (elPassword.type == 'password')
+		elPassword.type = 'text';
+
+	// Select character set for password mode
+	var mode = (field.generator.mode) ? field.generator.mode : 'alphanumeric';
+	var characters;
+	switch (mode) {
+		case 'alphanumeric':
+			characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+			break;
+		default:
+			characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+	}
+
+	// Generate and set password
+	var password = '';
+	var size = (field.generator.size) || 16;
+	for (var i=0; i < size; i++) 
+		password += characters.charAt(Math.random() * characters.length | 0);
+
+	elPassword.value = password;
 };
 
 if (typeof module !== 'undefined' && typeof module.exports !== 'undefined')

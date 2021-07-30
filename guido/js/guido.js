@@ -554,13 +554,18 @@ function guidoLoadList(prefix, mode, sync, callback) {
  */
 function guidoAttachJs(file_name, script, sync) {
 	guidoRun.logger.debug('Entering function guidoAttachJs() with args: ' + file_name);
-	
-	var script_element = document.createElement("script");
-	script_element.setAttribute("type", "text/javascript");
-	script_element.innerHTML = script;
-	
-    var head = document.getElementsByTagName("head")[0] || document.documentElement;
-    head.appendChild(script_element);
+
+	try {
+		var script_element = document.createElement("script");
+		script_element.setAttribute("type", "text/javascript");
+		script_element.innerHTML = script;
+		
+		var head = document.getElementsByTagName("head")[0] || document.documentElement;
+		head.appendChild(script_element);
+	}
+	catch(e) {
+		guidoRun.logger.error('Unable to attach JS file ' + file_name + ': ' + e);
+	}
     
     if (sync)
     	sync.dec();
