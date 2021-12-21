@@ -479,7 +479,7 @@ guidoForm.prototype.renderInput = function (field) {
 	// Copy the value as attribute if it had been read (e.g., when re-rendering) - or use a default if specified
 	if (field.value)
 		field.attributes.value = field.value;
-	else if (field.extra && field.extra.text)
+	else if (field.extra && (field.extra.text != undefined) && (field.extra.text != null))
 		field.attributes.value = field.extra.text;
 
 	var html = '<input ';
@@ -508,12 +508,12 @@ guidoForm.prototype.renderInput = function (field) {
 			html += ' <a href=javascript:void(0) style="text-decoration:none;" onClick="appRun.forms.' + this.id + '.togglePassword(\'' + field.attributes.id + '\')">👁</a> ';
 			html += '</span>';
 		}
-	}
 
-	// Attach "generate password" button
-	if (field.generator && field.generator.enabled) {
-		var cssButton = this.cssHtml(this.asArray(field.generator.cssInput));
-		html += ' <span ' + cssButton + '> <button type=button onClick="appRun.forms.' + this.id + '.generatePassword(\'' + field.attributes.id + '\', \'' + field.id + '\')">' + _("Generate") + '</button></span>';
+		// Attach "generate password" button
+		if (field.generator && field.generator.enabled) {
+			var cssButton = this.cssHtml(this.asArray(field.generator.cssInput));
+			html += ' <span ' + cssButton + '> <button type=button onClick="appRun.forms.' + this.id + '.generatePassword(\'' + field.attributes.id + '\', \'' + field.id + '\')">' + _("Generate") + '</button></span>';
+		}
 	}
 
 	// Multi-field INPUTs
@@ -625,7 +625,7 @@ guidoForm.prototype.renderSelect = function (field) {
 		var selected;
 		if (field.value)
 			selected = field.value;
-		else if (field.extra.selected)
+		else if (field.extra.selected != null)
 			selected = field.extra.selected;
 
 		if (field.extra.options) {
