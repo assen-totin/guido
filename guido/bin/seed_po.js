@@ -23,10 +23,6 @@ for (var i=0; i < linesDst.length; i++) {
 	if (! found)
 		console.log(linesDst[i]);
 
-	// We only care to match msgid lines from the target
-	if (linesDst[i].indexOf('msgid') < 0)
-		continue;
-
 	// Seek a match on msgid from the source and print the next (msgsrt) line from it
 	found = false;	
 	for (var j=0; j < linesSrc.length; j++) {
