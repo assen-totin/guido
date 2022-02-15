@@ -584,7 +584,7 @@ guidoTable.prototype.asArray = function(data) {
 	var ret = [];
 
 	if (data) {
-		if (data.constructor == Array) {
+		if (Array.isArray(data)) {
 			for (var i=0; i<data.length; i++)
 				ret.push(data[i]);
 		}
