@@ -107,6 +107,13 @@ var guidoTable = function(params, callback) {
 			this.rows[i].cells[j].css += ' ' + this.cssCells;
 	}
 
+	// Cells: convert NULL values to empty strings (needs for sorting)
+	for (var i=0; i < this.rows.length; i++) {
+		for (var j=0; j<this.rows[i].cells.length; j++)
+			if (this.rows[i].cells[j].content == null) 
+				this.rows[i].cells[j].content = '';
+	}
+
 	// Register the table
 	if (! appRun.tables)
 		appRun.tables = {};
