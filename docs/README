@@ -142,6 +142,7 @@ params = {
 			// - for SELECT: options=[{value:'',text:''}], selected='index', sort='asc'|'desc', multiple=bool, comparator=func()
 			// - for RADIO: options=[{value:'',text:''}], selected='index'
 			// - for CHECKBOX: selected=bool
+			// - for INPUT with multiField: selected=bool, text=['','',...]
 			// - for TEXTAREA: text=''
 			// - for BUTTON: text='', action=function() || ''
 			// - for INPUT: text='', submitOnEnter=bool

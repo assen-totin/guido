@@ -200,7 +200,7 @@ guidoForm.prototype._validate = function (field) {
 /**
  * Read all form values into the object
  */
-guidoForm.prototype.readValues = function () {
+guidoForm.prototype.readValues = function (rerender) {
 	this.logger.debug("Entering function readValues()...");
 
 	// If the form is just being created, it is not yet attached; return if so
@@ -230,10 +230,12 @@ guidoForm.prototype.readValues = function () {
 						// Get real value if INPUT was made from a SELECT -> DATALIST 
 						if (field.extra && field.extra.datalist && this.datalistSupported) {
 							value = elements[i].value;
-							for (var k=0; k<field.extra.options.length; k++) {
-								if (value == field.extra.options[k].text) {
-									value = field.extra.options[k].value;
-									break;
+							if (! rerender) {
+								for (var k=0; k<field.extra.options.length; k++) {
+									if (value == field.extra.options[k].text) {
+										value = field.extra.options[k].value;
+										break;
+									}
 								}
 							}
 						}
@@ -286,7 +288,7 @@ guidoForm.prototype.readValues = function () {
 /**
  * Render form
  */
-guidoForm.prototype.render = function (div) {
+guidoForm.prototype.render = function (div, rerender) {
 	this.logger.debug("Entering function render()...");
 
 	if (div)
@@ -312,7 +314,7 @@ guidoForm.prototype.render = function (div) {
 	}
 
 	// Read values in case we need to re-render
-	this.readValues();
+	this.readValues(rerender);
 
 	// Compose HTML
 	// We do not set METHOD and ACTION attributes here, because we don't want the browser to submit the form!
@@ -439,7 +441,7 @@ guidoForm.prototype._renderCommon = function (field) {
 
 	var keys = Object.keys(field.attributes);
 	for(var i=0; i<keys.length; i++) {
-		// Handle attributes that have no value - we set them the value "1" in GUIdo
+		// Handle attributes that have no value - we set them the value "GUIDO_TRUE" in GUIdo
 		if (field.attributes[keys[i]] == 'GUIDO_TRUE')
 			html += keys[i] + ' ';
 		else
@@ -606,6 +608,12 @@ guidoForm.prototype.renderSelect = function (field) {
 			html += '</datalist>';
 		}
 
+		// Copy the value as attribute if it had been read (e.g., when re-rendering) - or use a default if specified
+		if (field.value)
+			field.attributes.value = field.value;
+		else if (field.extra && (field.extra.text != undefined) && (field.extra.text != null))
+			field.attributes.value = field.extra.text;
+
 		html += '<input list=' + field.extra.datalist + ' ';
 		html += this._renderCommon(field);
 		if (field.extra.submitOnEnter)
@@ -622,19 +630,22 @@ guidoForm.prototype.renderSelect = function (field) {
 			guidoSortObjects(field.extra.options, 'text', field.extra.sort, field.extra.comparator);
 
 		// See which should be selected
-		var selected;
+		var selected = [];
 		if (field.value)
-			selected = field.value;
+			selected = this.asArray(field.value);
 		else if (field.extra.selected != null)
-			selected = field.extra.selected;
+			selected = this.asArray(field.extra.selected);
 
 		if (field.extra.options) {
 			for (var i=0; i<field.extra.options.length; i++) {
 				html += '<option value="' + field.extra.options[i].value + '" ';
 
-				if (field.extra.options[i].value == selected)
-					html += 'selected ';
-
+				for (var j=0; j < selected.length; j++) {
+					if (field.extra.options[i].value == selected[j]) {
+						html += 'selected ';
+						break;
+					}
+				}
 				html += '>' + field.extra.options[i].text + '</option>';
 			}
 		}
@@ -817,7 +828,7 @@ guidoForm.prototype.setEnabled = function(id, enabled) {
 	}
 
 	// Re-render the form
-	this.render();
+	this.render(null, true);
 };
 
 /**
@@ -849,7 +860,7 @@ guidoForm.prototype.multiFormAdd = function(id, value, render) {
 
 			// Re-render the form if asked
 			if (render)
-				this.render();
+				this.render(null, true);
 
 			break;
 		}
@@ -871,7 +882,7 @@ guidoForm.prototype.multiFormDel = function(id) {
 			element.parentNode.removeChild(element);
 */
 			delete this.fields[fields[i]];
-			this.render();
+			this.render(null, true);
 		}
 	}
 };
