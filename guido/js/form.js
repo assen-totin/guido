@@ -54,7 +54,8 @@ var guidoForm = function(params, callback) {
 	// If rendering a form with multiple values per INPUT, convert them to multifield
 	// For this, remove the array and produce a multiField
 	for (var i=0; i < fields.length; i++) {
-		if (this.fields[fields[i]].type == 'INPUT') {
+		if ((this.fields[fields[i]].type == 'INPUT') || (this.fields[fields[i]].type == 'CHECKBOX')) {
+			// If field.extra.text is array (usually for text inputs)
 			if (this.fields[fields[i]].extra && this.fields[fields[i]].extra.text && this.fields[fields[i]].extra.text.sort) {
 				var tmpText = [];
 				guidoCopyArray(this.fields[fields[i]].extra.text, tmpText);
@@ -65,7 +66,21 @@ var guidoForm = function(params, callback) {
 					this.fields[fields[i]].multiField = {};
 
 				for (var j=1; j < tmpText.length; j++)
-					this.multiFormAdd(this.fields[fields[i]].attributes.id, tmpText[j]);
+					this.multiFieldAdd(this.fields[fields[i]].attributes.id, {text: tmpText[j]});
+			}
+
+			// If field.extra.multifield is an array (usually for checkboxes)
+			if (this.fields[fields[i]].extra && this.fields[fields[i]].extra.multifield && this.fields[fields[i]].extra.multifield.sort) {
+				var tmpMF = [];
+				guidoCopyArray(this.fields[fields[i]].extra.multifield, tmpMF);
+
+				if (! this.fields[fields[i]].multiField)
+					this.fields[fields[i]].multiField = {};
+
+				for (var j=0; j < tmpMF.length; j++)
+					this.multiFieldAdd(this.fields[fields[i]].attributes.id, tmpMF[j]);
+
+				delete this.fields[fields[i]];
 			}
 		}
 	}
@@ -190,6 +205,9 @@ guidoForm.prototype._validate = function (field) {
 			case 'ipv4':
 				return guidoMatchIpv4(field.value);
 				break;
+			case 'cidr':
+				return guidoMatchCidr(field.value);
+				break;
 		}
 	}
 
@@ -213,11 +231,10 @@ guidoForm.prototype.readValues = function (rerender) {
 	if (! elements)
 		return;
 
-	for(var i=0; i<elements.length; i++) {
-		var id = elements[i].id;
-		for (var j=0; j<fields.length; j++) {
+	for(var i=0; i < elements.length; i++) {
+		for (var j=0; j < fields.length; j++) {
 			var field = this.fields[fields[j]];
-			if (field.enabled && (field.attributes.id == id)) {
+			if (field.enabled && (field.attributes.id == elements[i].id)) {
 				var value = null;
 				switch(field.type) {
 					case 'INPUT':
@@ -231,7 +248,7 @@ guidoForm.prototype.readValues = function (rerender) {
 						if (field.extra && field.extra.datalist && this.datalistSupported) {
 							value = elements[i].value;
 							if (! rerender) {
-								for (var k=0; k<field.extra.options.length; k++) {
+								for (var k=0; k < field.extra.options.length; k++) {
 									if (value == field.extra.options[k].text) {
 										value = field.extra.options[k].value;
 										break;
@@ -259,6 +276,10 @@ guidoForm.prototype.readValues = function (rerender) {
 						break;
 					case 'CHECKBOX':
 						value = elements[i].checked;
+
+						// Multifield checkboxes that are selected need the value set to the ID of the checkbox
+						if (value && field.multiField && field.extra && field.extra.id)
+							value = field.extra.id;
 						break;
 					case 'RADIO':
 						value = (elements[i].checked) ? elements[i].value : field.value;
@@ -389,8 +410,11 @@ guidoForm.prototype.renderField = function (field) {
 	if (field.label) {
 		html += '<span ';
 		html += (field.cssLabel) ? this.cssHtml(this.asArray(field.cssLabel)) : '';
-		html += '>' + field.label + '</span>';
+		html += '>' + field.label;
 	}
+	if (field.extra && field.extra.label)
+		html += ' ' + field.extra.label;
+	html += '</span>';
 
 	// NB: We wrap the <input> in a span to allow positioning via CSS
 	html += '<span ';
@@ -532,10 +556,10 @@ guidoForm.prototype.renderInput = function (field) {
 		cssSpacer = this.cssHtml(this.asArray(field.multiField.cssSpacer));
 
 		html += '<span ' + cssSpacer  + '>&nbsp;</span>';
-		html += '<button type=button ' + cssMF + ' onClick="appRun.forms.' + this.id + '.multiFormAdd(\'' + field.attributes.id + '\', 0, 1)">+</button>';
+		html += '<button type=button ' + cssMF + ' onClick="appRun.forms.' + this.id + '.multiFieldAdd(\'' + field.attributes.id + '\', 0, 1)">+</button>';
 		if (counter > 1) {
 			html += '<span ' + cssSpacer  + '>&nbsp;</span>';
-			html += '<button type=button ' + cssMF + ' onClick="appRun.forms.' + this.id + '.multiFormDel(\'' + field.attributes.id + '\')">-</button>';
+			html += '<button type=button ' + cssMF + ' onClick="appRun.forms.' + this.id + '.multiFieldDel(\'' + field.attributes.id + '\')">-</button>';
 		}
 	}
 
@@ -626,7 +650,7 @@ guidoForm.prototype.renderSelect = function (field) {
 		html += '>';
 
 		// Sort the options if asked to
-		if (field.extra.sort)
+		if (field.extra && field.extra.sort)
 			guidoSortObjects(field.extra.options, 'text', field.extra.sort, field.extra.comparator);
 
 		// See which should be selected
@@ -664,10 +688,12 @@ guidoForm.prototype.renderCheckbox = function (field) {
 
 	var html = '<input type=checkbox ';
 
+	if (field.extra && field.extra.id)
+		html += ' extraId=' + field.extra.id + ' ';
+
 	html += this._renderCommon(field);
 
 	// See which should be selected
-
 	var selected;
 	if (field.value !== null)
 		selected = field.value;
@@ -758,7 +784,7 @@ guidoForm.prototype.renderText = function (field) {
 
 	html += 'span>';
 
-	if (field.extra)
+	if (field.extra && field.extra.text)
 		html += field.extra.text;
 
 	html += '</span>';
@@ -777,10 +803,22 @@ guidoForm.prototype.getFormData = function() {
 	var data = {};
 
 	var fields = Object.keys(this.fields);
-	for (var i=0; i<fields.length; i++) {
+	for (var i=0; i < fields.length; i++) {
 		var field = this.fields[fields[i]];
+
+		if (! field.enabled)
+			continue;
+
+		// Multifield checkbox must return array, even if empty (i.e. no checkbox was selected)
+		if ((field.type == 'CHECKBOX') && field.multiField && !data.hasOwnProperty(field.attributes.name))
+			data[field.attributes.name] = [];
+
 		if (field.value !== null) {
 			if (data.hasOwnProperty(field.attributes.name)) {
+				// For multifield checkboxes, exclude FALSE values as these were not selected
+				if ((field.type == 'CHECKBOX') && field.multiField && ! field.value)
+					continue;
+
 				if (data[field.attributes.name].constructor == Array)
 					data[field.attributes.name].push(field.value);
 				else
@@ -834,7 +872,7 @@ guidoForm.prototype.setEnabled = function(id, enabled) {
 /**
  * Add multi-form input
  */
-guidoForm.prototype.multiFormAdd = function(id, value, render) {
+guidoForm.prototype.multiFieldAdd = function(id, value, render) {
 	var fields = Object.keys(this.fields);
 
 	for (var i=0; i < fields.length; i++) {
@@ -851,9 +889,12 @@ guidoForm.prototype.multiFormAdd = function(id, value, render) {
 			if (newField.attributes)
 				newField.attributes.id = newId;
 
-			// Set value if given
-			if (value)
-				newField.extra.text = value;
+			// Set values if given (normally: text, label and id)
+			if (value) {
+				var keys = Object.keys(value);
+				for (var j=0; j < keys.length; j++)
+					newField.extra[keys[j]] = value[keys[j]];
+			}
 
 			// Attach to the form
 			this.fields[newId] = newField;
@@ -871,7 +912,7 @@ guidoForm.prototype.multiFormAdd = function(id, value, render) {
 /**
  * Delete multi-form input
  */
-guidoForm.prototype.multiFormDel = function(id) {
+guidoForm.prototype.multiFieldDel = function(id) {
 	var fields = Object.keys(this.fields);
 
 	for (var i=0; i<fields.length; i++) {
