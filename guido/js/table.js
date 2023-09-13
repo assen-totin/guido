@@ -806,7 +806,7 @@ guidoTable.prototype.filterRun = function() {
 	// Read filter
 	for (var i=0; i<this.header.cells.length; i++) {
 		if (this.header.cells[i].filter.enabled)
-			this.header.cells[i].filter.value = document.getElementById(this.header.cells[i].filter.id).value;
+			this.header.cells[i].filter.value = document.getElementById(this.header.cells[i].filter.id).value.trim();
 		else
 			this.header.cells[i].filter.value = false;
 	}
