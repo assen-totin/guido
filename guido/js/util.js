@@ -29,7 +29,7 @@ function guidoSetLocation(url, title) {
 	var path = (guidoConf.path) ?  guidoConf.path : '';
 
 	// Here {} is just a placeholder for the object which can be associated with the state 
-	window.history.replaceState({}, title, path + url);
+	//window.history.replaceState({}, title, path + url);
 	document.title = title;
 }
 
@@ -477,6 +477,28 @@ function guidoMatchIpv4(ip) {
         if (ip.match(re))
                 return true;
         return false;
+};
+
+/**
+ * Match an IPv4 IP address or mask
+ * @param ip String The IP address to match
+ * @returs TRUE if the string is a valid address or netmask, FALSE otherwise
+ */
+function guidoMatchCidr(cidr) {
+		var parts = cidr.split('/');
+
+		// Check address
+		if (! guidoMatchIpv4(parts[0]))
+			return false;
+
+		// Check subnet
+		if (parts[1] != parseInt(parts[1]))
+			return false;
+
+		if ((parts[1] < 0) || (parts[1] > 32))
+			return false;
+
+		return true;
 };
 
 /**

@@ -74,9 +74,12 @@ var guidoForm = function(params, callback) {
 				var tmpMF = [];
 				guidoCopyArray(this.fields[fields[i]].extra.multifield, tmpMF);
 
+				//this.fields[fields[i]].extra.multifield = tmpMF[0];
+
 				if (! this.fields[fields[i]].multiField)
 					this.fields[fields[i]].multiField = {};
 
+				//for (var j=1; j < tmpMF.length; j++)
 				for (var j=0; j < tmpMF.length; j++)
 					this.multiFieldAdd(this.fields[fields[i]].attributes.id, tmpMF[j]);
 
@@ -657,10 +660,10 @@ guidoForm.prototype.renderSelect = function (field) {
 		var selected = [];
 		if (field.value)
 			selected = this.asArray(field.value);
-		else if (field.extra.selected != null)
+		else if (field.extra && field.extra.selected != null)
 			selected = this.asArray(field.extra.selected);
 
-		if (field.extra.options) {
+		if (field.extra && field.extra.options) {
 			for (var i=0; i<field.extra.options.length; i++) {
 				html += '<option value="' + field.extra.options[i].value + '" ';
 
@@ -670,6 +673,7 @@ guidoForm.prototype.renderSelect = function (field) {
 						break;
 					}
 				}
+
 				html += '>' + field.extra.options[i].text + '</option>';
 			}
 		}
@@ -714,7 +718,7 @@ guidoForm.prototype.renderRadio = function (field) {
 	this.logger.debug("Entering function renderRadio()...");
 
 	var html = '';
-	if (field.extra.options) {
+	if (field.extra && field.extra.options) {
 		for (var i=0; i<field.extra.options.length; i++) {
 			html += '<input type=radio ';
 
