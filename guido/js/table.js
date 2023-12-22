@@ -104,9 +104,11 @@ var guidoTable = function(params, callback) {
 	}
 
 	// Cells: attach cell CSS if given
-	for (var i=0; i < this.rows.length; i++) {
-		for (var j=0; j<this.rows[i].cells.length; j++)
-			this.rows[i].cells[j].css += ' ' + this.cssCells;
+	if (this.cssCells) {
+		for (var i=0; i < this.rows.length; i++) {
+			for (var j=0; j<this.rows[i].cells.length; j++)
+				this.rows[i].cells[j].css = (this.rows[i].cells[j].css) ? this.rows[i].cells[j].css + ' ' + this.cssCells : this.cssCells;
+		}
 	}
 
 	// Register the table
@@ -455,7 +457,7 @@ guidoTable.prototype.renderCell = function (cell, columnId, isHeader) {
  * Render common HTML attributes
  */
 guidoTable.prototype._renderCommon = function (item) {
-	//this.logger.debug("Entering function _renderCommon()...");
+	this.logger.debug("Entering function _renderCommon()...");
 
 	var html = ' ';
 
@@ -591,27 +593,19 @@ guidoTable.prototype.uuid4 = function() {
 guidoTable.prototype.asArray = function(data) {
 	var ret = [];
 
-	if (data) {
-		if (Array.isArray(data)) {
-			for (var i=0; i<data.length; i++)
-				ret.push(data[i]);
-		}
-		else
-			ret.push(data);
-	}
+	if (! data)
+		return ret;
 
-	return ret;
+	if (Array.isArray(data))
+		return data;
+
+	return data.split(/\s/);
 };
-
 
 /**
  * Compose CSS class list for HTML
  */
 guidoTable.prototype.cssHtml = function(css, cssExtra) {
-	// If css is empty, simply return empty string
-	if (! css)
-		return '';
-
 	var cssHtml = this.asArray(css);
 
 	if (cssExtra) {
@@ -619,6 +613,9 @@ guidoTable.prototype.cssHtml = function(css, cssExtra) {
 		for (var i=0; i < cssExtraHtml.length; i++)
 			cssHtml.push(cssExtraHtml[i]);
 	}
+
+	if (! cssHtml.length)
+		return '';
 
 	var html = 'class="';
 
