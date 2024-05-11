@@ -367,12 +367,16 @@ guidoTable.prototype.renderRow = function (row) {
 
 	// If filter is enabled, insert column for the filter toggle (rendered in header row) - it will be empty or will contain chechboxes
 	if (this.filter.enabled) {
-		html += '<td>';
 		if (this.filter.visible && this.filter.mass) {
+			html += '<td>';
 			html += '<input type=checkbox id="CB' + row.id + '"';
 			if (this.filter.mcb)
 				html += ' checked';
 			html += '>';
+		}
+		else {
+			html += '<td align=right>';
+			html += this.rowIdx;
 		}
 		html += '</td>';
 	}

@@ -106,11 +106,11 @@ function guidoTranslateNode(node, translator) {
 
 	// Dive in
 	//TODO: make sure we do not traverse the same node twice... maybe add marker?
-    node = node.firstChild;
-    while(node) {
-    	guidoTranslateNode(node, translator);
-        node = node.nextSibling;
-    }
+	node = node.firstChild;
+	while(node) {
+		guidoTranslateNode(node, translator);
+		node = node.nextSibling;
+	}
 }
 
 
@@ -173,5 +173,54 @@ function guidoTranslateDom(locale, element) {
 			element = document.body;
 		guidoTranslateNode(document.body, translator);
 	});
+}
+
++/**
++ * Translate a (muti-line) piece of HTML code
++ * @param html String The HTML code to translate
++ */
+function guidoTranslateHtml(html) {
+	var ret = '';
+
+	// Helper to removeHTML from a line of text
+	function stripHtml(line) {
+		var reHtml = /<(?:.|\n)*?>/gm;
+		var reEmpty = /^\s*$/;
+		var ret = [];
+
+		// Replace HTML with newlines in order to separate chunks of text withing diifferent tags.
+		var stripped = line.replace(reHtml, '\n');
+		if (stripped) {
+			// Split by the newline, then push valid chunks into the return array
+			var split = stripped.split('\n');
+
+			for (var i=0; i<split.length; i++) {
+				// If the chunk is empty, drop it
+				if (split[i].match(reEmpty))
+					continue;
+
+				if (split[i]) 
+					ret.push(split[i]);
+			}
+		}
+
+		return ret;
+	}
+
+	// Split input HTML into lines
+	const lines = html.split(/\r?\n/);
+
+	// Process each line: extract text, translate it and replace in the HTML
+	for (var i=0; i < lines.length; i++) {
+		var newLine = lines[i];
+
+		var strings = stripHtml(lines[i]);
+		for (var j=0; j < strings.length; j++)
+			newLine = newLine.replace(strings[j], _(strings[j]));
+
+		ret += newLine +' \n';
+	}
+
+	return ret;
 }
 
