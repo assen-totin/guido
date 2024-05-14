@@ -135,7 +135,6 @@ guidoForm.prototype.validate = function () {
 				if (! check)
 					return this.callback(field, null);
 			}
-
 		}
 	}
 

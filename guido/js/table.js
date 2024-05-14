@@ -62,52 +62,46 @@ var guidoTable = function(params, callback) {
 	if (! this.filter.hasOwnProperty('massCB'))
 		this.filter.mcb = false;
 
-	// Header: create an ID if not assigned, enable columns if not specified, disable filter if not specified
-	for (var i=0; i < this.header.cells.length; i++) {
-		if (! this.header.cells[i].hasOwnProperty('enabled'))
-			this.header.cells[i].enabled = true;
-		if (! this.header.cells[i].hasOwnProperty('filter'))
-			this.header.cells[i].filter = {};
-		if (! this.header.cells[i].filter.hasOwnProperty('id'))
-			this.header.cells[i].filter.id = this.uuid4();
-		if (! this.header.cells[i].filter.hasOwnProperty('enabled'))
-			this.header.cells[i].filter.enabled = false;
-		if (! this.header.cells[i].filter.hasOwnProperty('value'))
-			this.header.cells[i].filter.value = '';
-		if (! this.header.cells[i].filter.hasOwnProperty('mode'))
-			this.header.cells[i].filter.mode = 'text';
-	}
-
-	// Rows: create an ID if not supplied
-	for (var i=0; i < this.rows.length; i++) {
-		if (! this.rows[i].hasOwnProperty('id'))
-			this.rows[i].id = 'tr' + this.uuid4();
-
-		for (var j=0; j<this.rows[i].cells.length; j++) {
-			if (! this.rows[i].cells[j].hasOwnProperty('id'))
-				this.rows[i].cells[j].id = 'td' + this.uuid4();
+	// Header: set enabled, create an ID if not assigned, enable columns if not specified, disable filter if not specified
+	if (! this.header.hasOwnProperty('enabled'))
+		this.header.enabled = true;
+	if (this.header.enabled && this.header.cells && this.header.cells.length) {
+		for (var i=0; i < this.header.cells.length; i++) {
+			if (! this.header.cells[i].hasOwnProperty('enabled'))
+				this.header.cells[i].enabled = true;
+			if (! this.header.cells[i].hasOwnProperty('filter'))
+				this.header.cells[i].filter = {};
+			if (! this.header.cells[i].filter.hasOwnProperty('id'))
+				this.header.cells[i].filter.id = this.uuid4();
+			if (! this.header.cells[i].filter.hasOwnProperty('enabled'))
+				this.header.cells[i].filter.enabled = false;
+			if (! this.header.cells[i].filter.hasOwnProperty('value'))
+				this.header.cells[i].filter.value = '';
+			if (! this.header.cells[i].filter.hasOwnProperty('mode'))
+				this.header.cells[i].filter.mode = 'text';
 		}
 	}
 
-	// Rows: Set default enabled
-	if (! this.header.hasOwnProperty('enabled'))
-		this.header.enabled = true;
+	// Rows: set enabled, create an ID if not supplied, set CSS if provided
 	for (var i=0; i < this.rows.length; i++) {
+		if (! this.rows[i].hasOwnProperty('id'))
+			this.rows[i].id = 'tr' + this.uuid4();
 		if (! this.rows[i].hasOwnProperty('enabled'))
 			this.rows[i].enabled = true;
-	}
-
-	// Rows: attach per-row CSS if given
-	if (this.cssRows) {
-		for (var i=0; i < this.rows.length; i++)
+		if (this.cssRows)
 			this.rows[i].css += ' ' + this.cssRows;
-	}
 
-	// Cells: attach cell CSS if given
-	if (this.cssCells) {
-		for (var i=0; i < this.rows.length; i++) {
-			for (var j=0; j<this.rows[i].cells.length; j++)
+		for (var j=0; j < this.rows[i].cells.length; j++) {
+			if (! this.rows[i].cells[j].hasOwnProperty('id'))
+				this.rows[i].cells[j].id = 'td' + this.uuid4();
+			if (this.cssCells)
 				this.rows[i].cells[j].css = (this.rows[i].cells[j].css) ? this.rows[i].cells[j].css + ' ' + this.cssCells : this.cssCells;
+
+			// Pre-render content in all cells (so that the filter may find it)
+			if (this.rows[i].cells[j].hasOwnProperty('onRender'))
+				this.rows[i].cells[j].onRender(this.rows[i].cells[j]);
+			else if (this.header.enabled && this.header.cells && this.header.cells.length && this.header.cells[j].hasOwnProperty('onRender'))
+				this.header.cells[j].onRender(this.rows[i].cells[j]);
 		}
 	}
 
@@ -375,8 +369,8 @@ guidoTable.prototype.renderRow = function (row) {
 			html += '>';
 		}
 		else {
-			html += '<td align=right>';
-			html += this.rowIdx;
+			var rowNum = (this.currentPage - 1) * this.page + this.rowIdx;
+			html += '<td align=right>' + rowNum;
 		}
 		html += '</td>';
 	}
@@ -408,27 +402,25 @@ guidoTable.prototype.renderCell = function (cell, columnId, isHeader) {
 
 	html += '>';
 
-	if (cell.hasOwnProperty('content') && cell.content !== null) {
-		// Check if we need to call a rendering function
-		if (isHeader)
-			html += cell.content;
-		else {
-			if (cell.hasOwnProperty('onRender'))
-				html += cell.onRender(cell.content);
-			else if (this.header.cells[columnId].hasOwnProperty('onRender'))
-				html += this.header.cells[columnId].onRender(cell.content);
-			else {
-				// Check if we need to ellipsize
-				if (cell.contentEllipse) {
-					html += cell.contentEllipse;
-					html += '<a href=javascript:void(0) onClick="guidoTableEllipse(\'' + cell.id + '\',\'' + btoa(cell.content) + '\')">';
-					html += (cell.ellipse) ? cell.ellipse : ' more...';
-					html += '</a>';
-				}
-				else
-					html += cell.content;
-			}
+	// Check if we need to call a rendering function
+	if (isHeader && cell.content)
+		html += cell.content;
+	else {
+		// Re-run onRender() in case the content has changed
+		if (cell.hasOwnProperty('onRender'))
+			cell.onRender(cell);
+		else if (this.header.cells[columnId].hasOwnProperty('onRender'))
+			this.header.cells[columnId].onRender(cell);
+
+		// Check if we need to ellipsize
+		if (cell.contentEllipse) {
+			html += cell.contentEllipse;
+			html += '<a href=javascript:void(0) onClick="guidoTableEllipse(\'' + cell.id + '\',\'' + btoa(cell.content) + '\')">';
+			html += (cell.ellipse) ? cell.ellipse : ' more...';
+			html += '</a>';
 		}
+		else if (cell.content)
+			html += cell.content;
 	}
 
 	// Header cells may be sortable
@@ -814,7 +806,7 @@ guidoTable.prototype.filterRun = function() {
 	this.logger.debug("Entering function filterRun()...");
 
 	// Read filter
-	for (var i=0; i<this.header.cells.length; i++) {
+	for (var i=0; i < this.header.cells.length; i++) {
 		if (this.header.cells[i].filter.enabled) {
 			this.header.cells[i].filter.value = document.getElementById(this.header.cells[i].filter.id).value;
 			if (this.header.cells[i].filter.value)
@@ -959,11 +951,14 @@ guidoTable.prototype.exportPrepare = function() {
 		for (var j=0; j < this.rows[i].cells.length; j++) {
 			// See if this column is enabled for rendering in the header
 			if (this.header.cells[j].enabled && this.header.cells[j].export) {
-				// Add directly or pass through the onRender function first
-				if (this.header.cells[j].hasOwnProperty('onRender'))
-					row.push(this.header.cells[j].onRender(this.rows[i].cells[j].content));
-				else
-					row.push(this.rows[i].cells[j].content);
+				// Add directly or pass through the onExport function first
+				// NB: Table cells should have alredy been rendered once, so no need to check for onRender()
+				if (this.rows[i].cells[j].hasOwnProperty('onExport'))
+					this.rows[i].cells[j].onExport(this.rows[i].cells[j]);
+				else if (this.header.cells[j].hasOwnProperty('onExport'))
+					this.header.cells[j].onExport(this.rows[i].cells[j]);
+
+				row.push(this.rows[i].cells[j].content);
 			}
 		}
 		ret.rows.push(row);
