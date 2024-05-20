@@ -135,6 +135,7 @@ guidoForm.prototype.validate = function () {
 				if (! check)
 					return this.callback(field, null);
 			}
+
 		}
 	}
 
@@ -205,10 +206,16 @@ guidoForm.prototype._validate = function (field) {
 					return false;
 				break;
 			case 'ipv4':
-				return guidoMatchIpv4(field.value);
+				if (! guidoMatchIpv4(field.value))
+					return false;
 				break;
 			case 'cidr':
-				return guidoMatchCidr(field.value);
+				if (! guidoMatchCidr(field.value))
+					return false;
+				break;
+			case 'url':
+				if (! guidoMatchUrl(field.value))
+					return false;
 				break;
 		}
 	}

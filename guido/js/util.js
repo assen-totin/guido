@@ -502,6 +502,21 @@ function guidoMatchCidr(cidr) {
 };
 
 /**
+ * Match a URL
+ * @param ip String The URL to match
+ * @returs TRUE if the string is a valid address or netmask, FALSE otherwise
+ */
+function guidoMatchUrl(url) {
+	try {
+		var a = new URL(url);
+		return true;
+	}
+	catch (e) {
+		return false;
+	}
+};
+
+/**
  * Get the current layout name
  * @returns The name of the current layout
  */
