@@ -48,6 +48,9 @@ guidoRun.po = {};
 // Init form handlers
 guidoRun.forms = {};
 
+// Init firtst run marker
+guidoRun.first_run = true;
+
 /**
  * Main entry point
  * Will be invoked once on application's load.
@@ -241,12 +244,15 @@ function guidoMain() {
 function guidoLoadLayout(layout, section, skipHistory) {
 	guidoRun.logger.debug('Entering function guidoLoadLayout() with args: ' + layout + ',' + section);
 
+	var doLayout = (guidoRun.first_run || (guidoRun.current_layout && (guidoRun.current_layout !== layout))) ? true : false;
+	var doSection = (guidoRun.first_run || (guidoRun.current_section && (guidoRun.current_section !== section))) ? true : false;
+
 	// Call the unload functions for templates
 	$(document.body).children("div").each(function(index, element){
 		guidoUnloadTemplate(index, element);
 	});
 
-	if (guidoRun.current_section && (guidoRun.current_section !== section)) {
+	if (doSection) {
 		// Call per-section APP unloading function
 		var app_func_unload_section = 'appUnloadSection_' + guidoRun.current_section;
 		if (typeof window[app_func_unload_section] == 'function')
@@ -258,7 +264,7 @@ function guidoLoadLayout(layout, section, skipHistory) {
 			window[app_func_unload_section_common]();
 	}
 
-	if (guidoRun.current_layout && (guidoRun.current_layout !== layout)) {
+	if (doLayout) {
 		// Call per-layout APP unloading function
 		var app_func_unload_layout = 'appUnloadLayout_' + guidoRun.current_layout;
 		if (typeof window[app_func_unload_layout] == 'function')
@@ -276,8 +282,6 @@ function guidoLoadLayout(layout, section, skipHistory) {
 	});
 
 	// Switch layout and section to new ones
-	var old_layout = guidoRun.current_layout;
-	var old_section = guidoRun.current_section;
 	guidoRun.current_layout = layout;
 	guidoRun.current_section = section;
 
@@ -287,7 +291,7 @@ function guidoLoadLayout(layout, section, skipHistory) {
 	if (! skipHistory)
 		guidoNavHistoryPush(guidoRun.current_layout, guidoRun.current_section);
 
-	if (old_layout !== guidoRun.current_layout) {
+	if (doLayout) {
 		// Call common layout function (if defined)
 		var app_func_load_layout_common = 'appLoadLayout';
 		if (typeof window[app_func_load_layout_common] == 'function')
@@ -299,7 +303,7 @@ function guidoLoadLayout(layout, section, skipHistory) {
 			window[app_func_load_layout]();
 	}
 
-	if (old_section !== guidoRun.current_section) {
+	if (doSection) {
 		// Call common section APP loading function
 		var app_func_load_section_common = 'appLoadSection';
 		if (typeof window[app_func_load_section_common] == 'function')
@@ -315,6 +319,10 @@ function guidoLoadLayout(layout, section, skipHistory) {
 	$(document.body).children("#guido_" + guidoConf.layouts[guidoRun.current_layout]._root).each(function(index, element) {
 		guidoLoadTemplate(index, element);
 	});
+
+	// Set first run as completed
+	if (guidoRun.first_run)
+		guidoRun.first_run = false;
 }
 
 
