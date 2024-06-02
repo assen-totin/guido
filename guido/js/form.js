@@ -642,8 +642,15 @@ guidoForm.prototype.renderSelect = function (field) {
 		}
 
 		// Copy the value as attribute if it had been read (e.g., when re-rendering) - or use a default if specified
-		if (field.value)
-			field.attributes.value = field.value;
+		if (field.value) {
+			// NB: field.value contains the "value" from the field.extra.options array element, and we want the "text" here
+			for (var i=0; i<field.extra.options.length; i++) {
+				if (field.value == field.extra.options[i].value) {
+					field.attributes.value = field.extra.options[i].text;
+					break;
+				}
+			}
+		}
 		else if (field.extra && (field.extra.text != undefined) && (field.extra.text != null))
 			field.attributes.value = field.extra.text;
 
