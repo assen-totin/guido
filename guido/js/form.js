@@ -101,7 +101,7 @@ var guidoForm = function(params, callback) {
 	// Render the form
 	if (params.div) {
 		this.div = params.div;
-		this.render(this.div);
+		this.render();
 	}
 };
 
@@ -227,7 +227,7 @@ guidoForm.prototype._validate = function (field) {
 /**
  * Read all form values into the object
  */
-guidoForm.prototype.readValues = function (rerender) {
+guidoForm.prototype.readValues = function () {
 	this.logger.debug("Entering function readValues()...");
 
 	// If the form is just being created, it is not yet attached; return if so
@@ -256,12 +256,10 @@ guidoForm.prototype.readValues = function (rerender) {
 						// Get real value if INPUT was made from a SELECT -> DATALIST 
 						if (field.extra && field.extra.datalist && this.datalistSupported) {
 							value = elements[i].value;
-							if (! rerender) {
-								for (var k=0; k < field.extra.options.length; k++) {
-									if (value == field.extra.options[k].text) {
-										value = field.extra.options[k].value;
-										break;
-									}
+							for (var k=0; k < field.extra.options.length; k++) {
+								if (value == field.extra.options[k].text) {
+									value = field.extra.options[k].value;
+									break;
 								}
 							}
 						}
@@ -307,7 +305,7 @@ guidoForm.prototype.readValues = function (rerender) {
 							value = parseFloat(value);
 					}
 				}
-
+console.log(fields[j] + ': ' + value);
 				field.value = value;
 			}
 		}
@@ -318,7 +316,7 @@ guidoForm.prototype.readValues = function (rerender) {
 /**
  * Render form
  */
-guidoForm.prototype.render = function (div, rerender) {
+guidoForm.prototype.render = function (div) {
 	this.logger.debug("Entering function render()...");
 
 	if (div)
@@ -344,7 +342,7 @@ guidoForm.prototype.render = function (div, rerender) {
 	}
 
 	// Read values in case we need to re-render
-	this.readValues(rerender);
+	this.readValues();
 
 	// Compose HTML
 	// We do not set METHOD and ACTION attributes here, because we don't want the browser to submit the form!
@@ -642,6 +640,7 @@ guidoForm.prototype.renderSelect = function (field) {
 		}
 
 		// Copy the value as attribute if it had been read (e.g., when re-rendering) - or use a default if specified
+console.log(field.order + ': ' + field.value);
 		if (field.value) {
 			// NB: field.value contains the "value" from the field.extra.options array element, and we want the "text" here
 			for (var i=0; i<field.extra.options.length; i++) {
@@ -883,7 +882,7 @@ guidoForm.prototype.setEnabled = function(id, enabled) {
 	}
 
 	// Re-render the form
-	this.render(null, true);
+	this.render();
 };
 
 /**
@@ -918,7 +917,7 @@ guidoForm.prototype.multiFieldAdd = function(id, value, render) {
 
 			// Re-render the form if asked
 			if (render)
-				this.render(null, true);
+				this.render();
 
 			break;
 		}
@@ -940,7 +939,7 @@ guidoForm.prototype.multiFieldDel = function(id) {
 			element.parentNode.removeChild(element);
 */
 			delete this.fields[fields[i]];
-			this.render(null, true);
+			this.render();
 		}
 	}
 };
