@@ -48,6 +48,9 @@ guidoRun.po = {};
 // Init form handlers
 guidoRun.forms = {};
 
+// Init firtst run marker
+guidoRun.first_run = true;
+
 /**
  * Main entry point
  * Will be invoked once on application's load.
@@ -55,16 +58,17 @@ guidoRun.forms = {};
  */
 function guidoMain() {
 	guidoRun.logger.debug('Entering function guidoMain()...');
-	
-	// Init the back/forward navigation detection (browser buttons)
-	window.onpopstate = function(e){
-	    if(e.state){
-		// TODO: decide what to do here
-		//document.getElementById("content").innerHTML = e.state.html;
-		//document.title = e.state.pageTitle;
-	    	alert("Some button pressed!");
-	    }
-	};
+
+	// Handle forward/back buttons
+	window.addEventListener("popstate", (event) => {
+		// If a state has been provided, we have a "simulated" page and we update the current page
+		if (event.state) {
+			console.log('Back button pressed! ');
+			console.log(event.state);
+			if (event.state)
+				guidoLoadLayout(event.state.layout, event.state.section, true);
+		}
+	});
 
 	// Add the _root template of the layout to the list of templates for each section
 	for (var layout in guidoConf.layouts) {
@@ -235,105 +239,140 @@ function guidoMain() {
  * Load a layout and switch to the specified section inside it
  * @param layout String The name of the layout.
  * @param section String The name of the section.
+ * @param skipHistory Boolean Skip writing to browser's history (e.g., when going to page from that same history).
  */
-function guidoLoadLayout(layout, section) {
+function guidoLoadLayout(layout, section, skipHistory) {
 	guidoRun.logger.debug('Entering function guidoLoadLayout() with args: ' + layout + ',' + section);
 
-	// Call per-layout APP unloading function
-	if (layout !== guidoRun.current_layout) {
-		var app_func_unload_layout = 'appUnloadLayout_' + guidoRun.current_layout;
-		if (typeof window[app_func_unload_layout] == 'function')
-			window[app_func_unload_layout]();
-	}
-	
-	// Call per-section APP unloading function
-	if (section !== guidoRun.current_section) {
-		var app_func_unload_section = 'appUnloadSection_' + guidoRun.current_section;
-		if (typeof window[app_func_unload_section] == 'function')
-			window[app_func_unload_section]();
-	}
+	var doLayout = (guidoRun.first_run || (guidoRun.current_layout && (guidoRun.current_layout !== layout))) ? true : false;
+	var doSection = (guidoRun.first_run || (guidoRun.current_section && (guidoRun.current_section !== section))) ? true : false;
 
-	var old_layout = guidoRun.current_layout;
-	guidoRun.current_layout = layout;
-	guidoRun.current_section = section;
-
-	// Call the unload functions from the old layout
+	// Call the unload functions for templates
 	$(document.body).children("div").each(function(index, element){
 		guidoUnloadTemplate(index, element);
 	});
 
+	if (doSection) {
+		// Call per-section APP unloading function
+		var app_func_unload_section = 'appUnloadSection_' + guidoRun.current_section;
+		if (typeof window[app_func_unload_section] == 'function')
+			window[app_func_unload_section]();
+
+		// Call per-section common unloading function
+		var app_func_unload_section_common = 'appUnloadSection';
+		if (typeof window[app_func_unload_section_common] == 'function')
+			window[app_func_unload_section_common]();
+	}
+
+	if (doLayout) {
+		// Call per-layout APP unloading function
+		var app_func_unload_layout = 'appUnloadLayout_' + guidoRun.current_layout;
+		if (typeof window[app_func_unload_layout] == 'function')
+			window[app_func_unload_layout]();
+
+		// Call per-layout common unloading function
+		var app_func_unload_layout_common = 'appUnloadLayout';
+		if (typeof window[app_func_unload_layout_common] == 'function')
+			window[app_func_unload_layout_common]();
+	}
+
+	// Remove the old layout
+	$(document.body).children("#guido_" + guidoConf.layouts[guidoRun.current_layout]._root).each(function(index, element){
+		element.innerHTML = '';
+	});
+
+	// Switch layout and section to new ones
+	guidoRun.current_layout = layout;
+	guidoRun.current_section = section;
+
 	// Set the window title & location
 	var title = guidoComposeTitle(null);
 	guidoSetLocation('/' + guidoRun.current_layout + '/' + section, title);
+	if (! skipHistory)
+		guidoNavHistoryPush(guidoRun.current_layout, guidoRun.current_section);
 
-	// Call common layout function (if defined)
-	var app_func_load_layout_common = 'appLoadLayout';
-	if (typeof window[app_func_load_layout_common] == 'function')
-		window[app_func_load_layout_common]();
+	if (doLayout) {
+		// Call common layout function (if defined)
+		var app_func_load_layout_common = 'appLoadLayout';
+		if (typeof window[app_func_load_layout_common] == 'function')
+			window[app_func_load_layout_common]();
 
-	// Call per-layout APP loading function
-	var app_func_load_layout = 'appLoadLayout_' + layout;
-	if (typeof window[app_func_load_layout] == 'function')
-		window[app_func_load_layout]();
+		// Call per-layout APP loading function
+		var app_func_load_layout = 'appLoadLayout_' + layout;
+		if (typeof window[app_func_load_layout] == 'function')
+			window[app_func_load_layout]();
+	}
 
-	// Call common section APP loading function
-	var app_func_load_section_common = 'appLoadSection';
-	if (typeof window[app_func_load_section_common] == 'function')
-		window[app_func_load_section_common]();
+	if (doSection) {
+		// Call common section APP loading function
+		var app_func_load_section_common = 'appLoadSection';
+		if (typeof window[app_func_load_section_common] == 'function')
+			window[app_func_load_section_common]();
 
-	// Call per-section APP loading function
-	var app_func_load_section = 'appLoadSection_' + section;
-	if (typeof window[app_func_load_section] == 'function')
-		window[app_func_load_section]();
-
-	// Remove the old layout
-	$(document.body).children("#guido_" + guidoConf.layouts[old_layout]._root).each(function(index, element){
-		element.innerHTML = '';
-	});
+		// Call per-section APP loading function
+		var app_func_load_section = 'appLoadSection_' + section;
+		if (typeof window[app_func_load_section] == 'function')
+			window[app_func_load_section]();
+	}
 
 	// Load the templates recursively starting from the BODY tag
 	$(document.body).children("#guido_" + guidoConf.layouts[guidoRun.current_layout]._root).each(function(index, element) {
 		guidoLoadTemplate(index, element);
 	});
+
+	// Set first run as completed
+	if (guidoRun.first_run)
+		guidoRun.first_run = false;
 }
 
 
 /**
  * Switch to the specified section within the current layout
  * @param section String The name of the section.
+ * @param skipHistory Boolean Skip writing to browser's history (e.g., when going to page from that same history).
  */
-function guidoLoadSection(section) {
+function guidoLoadSection(section, skipHistory) {
 	guidoRun.logger.debug('Entering function guidoLoadSection() with args: ' + section);
-	
-	// Call per-section APP unloading function
-	if (section !== guidoRun.current_section) {
-		var app_func_unload = 'appUnloadSection_' + guidoRun.current_section;
-		if (typeof window[app_func_unload] == 'function') {
-			window[app_func_unload]();
-		}
-	}
-	
-	guidoRun.current_section = section;
-	
-	// Set the window title & location
-	var title = guidoComposeTitle(null);
-	guidoSetLocation('/' + guidoRun.current_layout + '/' + section, title);
 
 	// Unload the templates recursively starting from the BODY tag
 	$(document.body).children("div").each(function(index, element){
 		guidoUnloadTemplate(index, element);
 	});
 
-	// Call common section APP loading function
-	var app_func_load_section_common = 'appLoadSection';
-	if (typeof window[app_func_load_section_common] == 'function')
-		window[app_func_load_section_common]();
+	if (guidoRun.current_section && (guidoRun.current_section !== section)) {
+		// Call per-section APP unloading function
+		var app_func_unload_section = 'appUnloadSection_' + guidoRun.current_section;
+		if (typeof window[app_func_unload_section] == 'function')
+			window[app_func_unload_section]();
 
-	// Call per-section APP loading function
-	var app_func_load = 'appLoadSection_' + section;
-	if (typeof window[app_func_load] == 'function')
-		window[app_func_load]();
+		// Call per-section common unloading function
+		var app_func_unload_section_common = 'appUnloadSection';
+		if (typeof window[app_func_unload_section_common] == 'function')
+			window[app_func_unload_section_common]();
+	}
+
+	// Switch layout and section to new ones
+	var old_section = guidoRun.current_section;
+	guidoRun.current_section = section;
 	
+	// Set the window title & location
+	var title = guidoComposeTitle(null);
+	guidoSetLocation('/' + guidoRun.current_layout + '/' + section, title);
+	if (! skipHistory)
+		guidoNavHistoryPush(guidoRun.current_layout, guidoRun.current_section);
+
+	if (old_section !== guidoRun.current_section) {
+		// Call common section APP loading function
+		var app_func_load_section_common = 'appLoadSection';
+		if (typeof window[app_func_load_section_common] == 'function')
+			window[app_func_load_section_common]();
+
+		// Call per-section APP loading function
+		var app_func_load_section = 'appLoadSection_' + section;
+		if (typeof window[app_func_load_section] == 'function')
+			window[app_func_load_section]();
+	}
+
 	// Load the templates recursively starting from the BODY tag
 	$(document.body).children("div").each(function(index, element){
 		guidoLoadTemplate(index, element);
@@ -673,5 +712,27 @@ function guidoAttachFont(key, data, sync) {
 	css += "}\n";
 
 	guidoAttachCss(css, sync);
+}
+
+/**
+ * Save history to local list and browser
+ * @param layout String The name of the layout.
+ * @param section String The name of the section.
+ */
+function guidoNavHistoryPush(layout, section) {
+	guidoRun.logger.debug('Entering function guidoNavHistoryPush() with args: ' + layout + ',' + section);
+
+	// Define history object
+	var h = {
+		layout: layout,
+		section: section
+	};
+
+	// Define URL
+	var path = (guidoConf.path) ?  guidoConf.path : '';
+	var url = path + '/' + layout + '/' + section;
+
+	// Save to browser's history
+	window.history.pushState(h, '', url);
 }
 

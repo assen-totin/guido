@@ -60,25 +60,29 @@ function guidoLsSave() {
 function guidoLsLoad(key, value) {
 	var restore = true;
 
-	if(typeof(Storage) !== "undefined") {
-		var state = localStorage.getItem(guidoConf.ls + "__state");
-		if (state) {
-			var savedState = JSON.parse(state);
+	if(typeof(Storage) === "undefined")
+		return;
 
-			// Only restore the runtime object if the value of the supplied key inside it matches the supplied value			
-			if (key) {
-				if (typeof key === "object" && key.constructor == Object)
-					restore = guidoCheckProperty(key, savedState);
-				else {
-					if (savedState[key] == value)
-						restore = true;
-				}
-			}
+	var state = localStorage.getItem(guidoConf.ls + "__state");
+	if (! state)
+		return;
 
-			if (restore)
-				guidoDeepCopyObject(savedState, appRun, true);
+	var savedState = JSON.parse(state);
+
+	// Only restore the runtime object if the value of the supplied key inside it matches the supplied value			
+	if (key) {
+		if (typeof key === "object" && key.constructor == Object)
+			restore = guidoCheckProperty(key, savedState);
+		else {
+			if (savedState[key] == value)
+				restore = true;
+			else
+				restore = false;
 		}
 	}
+
+	if (restore)
+		guidoDeepCopyObject(savedState, appRun, true);
 }
 
 /**

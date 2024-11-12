@@ -5,6 +5,7 @@
 	height: 100%;
 	width: 100%;
 	border-spacing: 20px;
+	table-layout: fixed;
 }
 
 .table-row {
@@ -14,7 +15,7 @@
 .table-cell-left {
 	display: table-cell;
 	background-color: #F0F0F0;
-	width: 25%;
+	width: 300px;
 	height: 100%;
 	border-radius: 20px; 
 	border: 1px solid; 

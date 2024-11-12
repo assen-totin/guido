@@ -53,6 +53,8 @@ var guidoTable = function(params, callback) {
 		this.filter.enabled = false;
 	if (! this.filter.hasOwnProperty('visible'))
 		this.filter.visible = false;
+	if (! this.filter.hasOwnProperty('cssFilter'))
+		this.filter.cssFilter = '';
 	if (! this.filter.hasOwnProperty('css'))
 		this.filter.css = '';
 	if (! this.filter.hasOwnProperty('mass'))
@@ -60,58 +62,47 @@ var guidoTable = function(params, callback) {
 	if (! this.filter.hasOwnProperty('massCB'))
 		this.filter.mcb = false;
 
-	// Header: create an ID if not assigned, enable columns if not specified, disable filter if not specified
-	for (var i=0; i < this.header.cells.length; i++) {
-		if (! this.header.cells[i].hasOwnProperty('enabled'))
-			this.header.cells[i].enabled = true;
-		if (! this.header.cells[i].hasOwnProperty('filter'))
-			this.header.cells[i].filter = {};
-		if (! this.header.cells[i].filter.hasOwnProperty('id'))
-			this.header.cells[i].filter.id = this.uuid4();
-		if (! this.header.cells[i].filter.hasOwnProperty('enabled'))
-			this.header.cells[i].filter.enabled = false;
-		if (! this.header.cells[i].filter.hasOwnProperty('value'))
-			this.header.cells[i].filter.value = '';
-		if (! this.header.cells[i].filter.hasOwnProperty('mode'))
-			this.header.cells[i].filter.mode = 'text';
-	}
-
-	// Rows: create an ID if not supplied
-	for (var i=0; i < this.rows.length; i++) {
-		if (! this.rows[i].hasOwnProperty('id'))
-			this.rows[i].id = 'tr' + this.uuid4();
-
-		for (var j=0; j<this.rows[i].cells.length; j++) {
-			if (! this.rows[i].cells[j].hasOwnProperty('id'))
-				this.rows[i].cells[j].id = 'td' + this.uuid4();
+	// Header: set enabled, create an ID if not assigned, enable columns if not specified, disable filter if not specified
+	if (! this.header.hasOwnProperty('enabled'))
+		this.header.enabled = true;
+	if (this.header.enabled && this.header.cells && this.header.cells.length) {
+		for (var i=0; i < this.header.cells.length; i++) {
+			if (! this.header.cells[i].hasOwnProperty('enabled'))
+				this.header.cells[i].enabled = true;
+			if (! this.header.cells[i].hasOwnProperty('filter'))
+				this.header.cells[i].filter = {};
+			if (! this.header.cells[i].filter.hasOwnProperty('id'))
+				this.header.cells[i].filter.id = this.uuid4();
+			if (! this.header.cells[i].filter.hasOwnProperty('enabled'))
+				this.header.cells[i].filter.enabled = false;
+			if (! this.header.cells[i].filter.hasOwnProperty('value'))
+				this.header.cells[i].filter.value = '';
+			if (! this.header.cells[i].filter.hasOwnProperty('mode'))
+				this.header.cells[i].filter.mode = 'text';
 		}
 	}
 
-	// Rows: Set default enabled
-	if (! this.header.hasOwnProperty('enabled'))
-		this.header.enabled = true;
+	// Rows: set enabled, create an ID if not supplied, set CSS if provided
 	for (var i=0; i < this.rows.length; i++) {
+		if (! this.rows[i].hasOwnProperty('id'))
+			this.rows[i].id = 'tr' + this.uuid4();
 		if (! this.rows[i].hasOwnProperty('enabled'))
 			this.rows[i].enabled = true;
-	}
-
-	// Rows: attach per-row CSS if given
-	if (this.cssRows) {
-		for (var i=0; i < this.rows.length; i++)
+		if (this.cssRows)
 			this.rows[i].css += ' ' + this.cssRows;
-	}
 
-	// Cells: attach cell CSS if given
-	for (var i=0; i < this.rows.length; i++) {
-		for (var j=0; j<this.rows[i].cells.length; j++)
-			this.rows[i].cells[j].css += ' ' + this.cssCells;
-	}
+		for (var j=0; j < this.rows[i].cells.length; j++) {
+			if (! this.rows[i].cells[j].hasOwnProperty('id'))
+				this.rows[i].cells[j].id = 'td' + this.uuid4();
+			if (this.cssCells)
+				this.rows[i].cells[j].css = (this.rows[i].cells[j].css) ? this.rows[i].cells[j].css + ' ' + this.cssCells : this.cssCells;
 
-	// Cells: convert NULL values to empty strings (needs for sorting)
-	for (var i=0; i < this.rows.length; i++) {
-		for (var j=0; j<this.rows[i].cells.length; j++)
-			if (this.rows[i].cells[j].content == null) 
-				this.rows[i].cells[j].content = '';
+			// Pre-render content in all cells (so that the filter may find it)
+			if (this.rows[i].cells[j].hasOwnProperty('onRender'))
+				this.rows[i].cells[j].onRender(this.rows[i].cells[j]);
+			else if (this.header.enabled && this.header.cells && this.header.cells.length && this.header.cells[j].hasOwnProperty('onRender'))
+				this.header.cells[j].onRender(this.rows[i].cells[j]);
+		}
 	}
 
 	// Register the table
@@ -146,16 +137,17 @@ guidoTable.prototype.render = function (div) {
 		if (this.comparator)
 			method = 'custom';
 		else {
-			method = 'int';
-			for (var i=0; i<this.rows.length; i++) {
+			for (var i=0; i < this.rows.length; i++) {
 				// Handle rowspan cells
 				if (! this.rows[i].cells[this.sort])
 					continue;
 
-				if (this.rows[i].cells[this.sort].content !== parseInt(this.rows[i].cells[this.sort].content, 10)) {
-					method = 'str';
-					break;
-				}
+				if (this.rows[i].cells[this.sort].contentCmp)
+					method = (this.rows[i].cells[this.sort].contentCmp === parseInt(this.rows[i].cells[this.sort].contentCmp, 10)) ? 'int' : 'str';
+				else
+					method = (this.rows[i].cells[this.sort].content === parseInt(this.rows[i].cells[this.sort].content, 10)) ? 'int' : 'str';
+
+				break;
 			}
 		}
 
@@ -171,18 +163,23 @@ guidoTable.prototype.render = function (div) {
 
 				switch(method) {
 					case 'str':
-						cmp = this.rows[j].cells[this.sort].content.localeCompare(this.rows[j+1].cells[this.sort].content);
-						break;
-
-					case 'int':
-						if (this.rows[j].cells[this.sort].content == this.rows[j+1].cells[this.sort].content)
-							cmp = 0;
+						// Compare custom value or, if not defined, rendered values
+						if (this.rows[j].cells[this.sort].contentCmp)
+							cmp = this.rows[j].cells[this.sort].contentCmp.localeCompare(this.rows[j+1].cells[this.sort].contentCmp);
 						else
-							cmp = (this.rows[j].cells[this.sort].content > this.rows[j+1].cells[this.sort].content) ? 1 : -1;
+							cmp = this.rows[j].cells[this.sort].content.localeCompare(this.rows[j+1].cells[this.sort].content);
 						break;
-
+					case 'int':
+						if (this.rows[j].cells[this.sort].contentCmp)
+							cmp = (this.rows[j].cells[this.sort].contentCmp == this.rows[j+1].cells[this.sort].contentCmp) ? 0 : (this.rows[j].cells[this.sort].contentCmp > this.rows[j+1].cells[this.sort].contentCmp) ? 1 : -1;
+						else
+							cmp = (this.rows[j].cells[this.sort].content == this.rows[j+1].cells[this.sort].content) ? 0 : (this.rows[j].cells[this.sort].content > this.rows[j+1].cells[this.sort].content) ? 1 : -1;
+						break;
 					case 'custom':
-						cmp = this.comparator(this.rows[j].cells[this.sort].content, this.rows[j+1].cells[this.sort].content);
+						if (this.rows[j].cells[this.sort].contentCmp)
+							cmp = this.comparator(this.rows[j].cells[this.sort].contentCmp, this.rows[j+1].cells[this.sort].contentCmp);
+						else
+							cmp = this.comparator(this.rows[j].cells[this.sort].content, this.rows[j+1].cells[this.sort].content);
 						break;
 				}
 
@@ -304,7 +301,7 @@ guidoTable.prototype.renderHeader = function () {
 
 	// If filter is enabled, show icon in a first column
 	if (this.filter.enabled)
-		html += '<td>' + this.getFilterControl() + '</td>';
+		html += '<td ' + this.cssHtml(this.filter.cssFilter) + '>' + this.getFilterControl() + '</td>';
 
 	for (var i=0; i < this.header.cells.length; i++) {
 		// See if this column is enabled for rendering in the header
@@ -364,12 +361,16 @@ guidoTable.prototype.renderRow = function (row) {
 
 	// If filter is enabled, insert column for the filter toggle (rendered in header row) - it will be empty or will contain chechboxes
 	if (this.filter.enabled) {
-		html += '<td>';
 		if (this.filter.visible && this.filter.mass) {
+			html += '<td>';
 			html += '<input type=checkbox id="CB' + row.id + '"';
 			if (this.filter.mcb)
 				html += ' checked';
 			html += '>';
+		}
+		else {
+			var rowNum = (this.currentPage - 1) * this.page + this.rowIdx;
+			html += '<td align=right>' + rowNum;
 		}
 		html += '</td>';
 	}
@@ -393,7 +394,7 @@ guidoTable.prototype.renderRow = function (row) {
  * Render cell
  */
 guidoTable.prototype.renderCell = function (cell, columnId, isHeader) {
-	this.logger.debug("Entering function renderCell()...");
+	//this.logger.debug("Entering function renderCell()...");
 
 	var html = '<td ';
 
@@ -401,27 +402,25 @@ guidoTable.prototype.renderCell = function (cell, columnId, isHeader) {
 
 	html += '>';
 
-	if (cell.hasOwnProperty('content') && cell.content !== null) {
-		// Check if we need to call a rendering function
-		if (isHeader)
-			html += cell.content;
-		else {
-			if (cell.hasOwnProperty('onRender'))
-				html += cell.onRender(cell.content);
-			else if (this.header.cells[columnId].hasOwnProperty('onRender'))
-				html += this.header.cells[columnId].onRender(cell.content);
-			else {
-				// Check if we need to ellipsize
-				if (cell.contentEllipse) {
-					html += cell.contentEllipse;
-					html += '<a href=javascript:void(0) onClick="guidoTableEllipse(\'' + cell.id + '\',\'' + btoa(cell.content) + '\')">';
-					html += (cell.ellipse) ? cell.ellipse : ' more...';
-					html += '</a>';
-				}
-				else
-					html += cell.content;
-			}
+	// Check if we need to call a rendering function
+	if (isHeader && cell.content)
+		html += cell.content;
+	else {
+		// Re-run onRender() in case the content has changed
+		if (cell.hasOwnProperty('onRender'))
+			cell.onRender(cell);
+		else if (this.header.cells[columnId].hasOwnProperty('onRender'))
+			this.header.cells[columnId].onRender(cell);
+
+		// Check if we need to ellipsize
+		if (cell.contentEllipse) {
+			html += cell.contentEllipse;
+			html += '<a href=javascript:void(0) onClick="guidoTableEllipse(\'' + cell.id + '\',\'' + btoa(cell.content) + '\')">';
+			html += (cell.ellipse) ? cell.ellipse : ' more...';
+			html += '</a>';
 		}
+		else if (cell.content)
+			html += cell.content;
 	}
 
 	// Header cells may be sortable
@@ -590,26 +589,29 @@ guidoTable.prototype.uuid4 = function() {
 guidoTable.prototype.asArray = function(data) {
 	var ret = [];
 
-	if (data) {
-		if (Array.isArray(data)) {
-			for (var i=0; i<data.length; i++)
-				ret.push(data[i]);
-		}
-		else
-			ret.push(data);
-	}
+	if (! data)
+		return ret;
 
-	return ret;
+	if (Array.isArray(data))
+		return data;
+
+	return data.split(/\s/);
 };
-
 
 /**
  * Compose CSS class list for HTML
  */
 guidoTable.prototype.cssHtml = function(css, cssExtra) {
 	var cssHtml = this.asArray(css);
-	if (cssExtra)
-		cssHtml.push(cssExtra);
+
+	if (cssExtra) {
+		var cssExtraHtml = this.asArray(cssExtra);
+		for (var i=0; i < cssExtraHtml.length; i++)
+			cssHtml.push(cssExtraHtml[i]);
+	}
+
+	if (! cssHtml.length)
+		return '';
 
 	var html = 'class="';
 
@@ -804,9 +806,12 @@ guidoTable.prototype.filterRun = function() {
 	this.logger.debug("Entering function filterRun()...");
 
 	// Read filter
-	for (var i=0; i<this.header.cells.length; i++) {
-		if (this.header.cells[i].filter.enabled)
-			this.header.cells[i].filter.value = document.getElementById(this.header.cells[i].filter.id).value.trim();
+	for (var i=0; i < this.header.cells.length; i++) {
+		if (this.header.cells[i].filter.enabled) {
+			this.header.cells[i].filter.value = document.getElementById(this.header.cells[i].filter.id).value;
+			if (this.header.cells[i].filter.value)
+				this.header.cells[i].filter.value = this.header.cells[i].filter.value.trim();
+		}
 		else
 			this.header.cells[i].filter.value = false;
 	}
@@ -946,11 +951,14 @@ guidoTable.prototype.exportPrepare = function() {
 		for (var j=0; j < this.rows[i].cells.length; j++) {
 			// See if this column is enabled for rendering in the header
 			if (this.header.cells[j].enabled && this.header.cells[j].export) {
-				// Add directly or pass through the onRender function first
-				if (this.header.cells[j].hasOwnProperty('onRender'))
-					row.push(this.header.cells[j].onRender(this.rows[i].cells[j].content));
-				else
-					row.push(this.rows[i].cells[j].content);
+				// Add directly or pass through the onExport function first
+				// NB: Table cells should have alredy been rendered once, so no need to check for onRender()
+				if (this.rows[i].cells[j].hasOwnProperty('onExport'))
+					this.rows[i].cells[j].onExport(this.rows[i].cells[j]);
+				else if (this.header.cells[j].hasOwnProperty('onExport'))
+					this.header.cells[j].onExport(this.rows[i].cells[j]);
+
+				row.push(this.rows[i].cells[j].content);
 			}
 		}
 		ret.rows.push(row);
@@ -1045,7 +1053,7 @@ guidoTable.prototype.exportCsv = function() {
 	}
 
 	// Filename
-	var filename = (this.pageControls.export.xls.filename) ? this.pageControls.export.xls.filename : "table-" + this.id + ".csv";
+	var filename = (this.pageControls.export.csv.filename) ? this.pageControls.export.csv.filename : "table-" + this.id + ".csv";
 
 //	var blob = new Blob([dataOut], {type: "text/csv;charset=utf-8"});
 	var blob = new Blob([dataOut], {type: "text/csv"});

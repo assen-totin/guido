@@ -142,11 +142,11 @@ params = {
 			// - for SELECT: options=[{value:'',text:''}], selected='index', sort='asc'|'desc', multiple=bool, comparator=func()
 			// - for RADIO: options=[{value:'',text:''}], selected='index'
 			// - for CHECKBOX: selected=bool
-			// - for INPUT with multiField: selected=bool, text=['','',...]
+			// - for CHECKBOX with multiField: selected=bool
 			// - for TEXTAREA: text=''
 			// - for BUTTON: text='', action=function() || ''
 			// - for INPUT: text='', submitOnEnter=bool
-			// - for INPUT with multiField: text=['','',...]
+			// - for INPUT with multiField: selected=bool, text=['','',...]
 			// - for TEXT: text=''
 			extra: {},
 			// CSS class(es) which will be applied to the field's own DIV.
@@ -159,6 +159,7 @@ params = {
 			// The ID of the div that contains the field; for internal use only, do not set or modify this property.
 			divId: '',
 			// For INPUT only: if true, a button to add more fields like this will be displayed next to the first one.
+			// For CHECKBOX only: if true, allows multiple checkboxes with different values and same ID.
 			// The values of all inputs will be returned in an array. 
 			multiField: bool,
 			// A function to be invoked if the contents of the field changes (name or inline)
@@ -303,7 +304,9 @@ var params = {
 		enabled: bool,
 		// Whether the filter is visible (expanded) or not by default. Default false.
 		visible: bool,
-		// CSS classes that will be applied to each cell in the filter. 
+		// CSS classes to that will be applied to the first cell in the filter (checkbox)
+		cssFilter: [] || '',
+		// CSS classes that will be applied to each subsequent cell in the filter (for actual table columns).
 		css: [] || '',
 		// Mass actions toggle
 		mass: true || false,
@@ -359,6 +362,8 @@ var params = {
 				onRender: func(),
 				// Cell's content.
 				content: '',
+				// Optional alternative content that will be used for sorting instead of the visible value in the cell
+				contentCmp: '',
 				// Optional shortened (ellipsized) cell's content and the optional ellipse text (default "more...")
 				contentEllipse: '',
 				ellipse: '',
