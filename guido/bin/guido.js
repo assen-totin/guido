@@ -37,7 +37,7 @@ var list = [];
 // ZIP file
 var zip = new Zip({prefix:'../../', action:'strip'});
 var sync = new guidoSync(function(){
-	zip.writeZip('../../guido.zip');
+	zip.writeZip('../../public/guido.zip');
 });
 
 // Walk dirs
@@ -75,7 +75,7 @@ base_dir = '../../guido/js';
 walk(base_dir, null, null, combiner);
 
 // Generate the index.min.html from index.html: 
-var indexHtml = fs.readFileSync('../../index.html', 'utf8');
+var indexHtml = fs.readFileSync('../../public/index.html', 'utf8');
 var reGuidoMin = /^\s*<\s*script\s*src\s*=\s*guido\/js\/guido\.js.*$/gm;
 var reGuidoAll = /^\s*<\s*script\s*src\s*=\s*guido\/js\/.*$/gm;
 // Replace guido.js with guido.min.js
@@ -83,7 +83,7 @@ var indexHtmlMin = indexHtml.replace(reGuidoMin, '<script src=guido/js.min/guido
 // Remove all other guido scripts
 indexHtmlMin = indexHtmlMin.replace(reGuidoAll, '');
 // Write to minified file
-fs.writeFileSync('../../index.min.html', indexHtmlMin);
+fs.writeFileSync('../../public/index.min.html', indexHtmlMin);
 
 /**
  * Walk a directory, adding its file to the list.
