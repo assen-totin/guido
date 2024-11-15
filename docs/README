@@ -481,6 +481,15 @@ Uncompressed deployment is better suited for development and pre-production test
 
 Compressed deployment is best suited for production environments as the whole application is compressed into a single ZIP file, making it for the fastest and most efficient loading. To generate the ZIP file, just go to guido/bin and gun 'node guido.js'. In addition, Guido will detect JavaScript files and will minify them by removing blank lines, commented lines and newline symbols before compressing. 
 
+A quick guide how to rebuild the three most commonly used guido.index files:
+
+cd app/images
+ls -l | awk '{print $9}' | grep -v guido.index | grep -v '^$' > guido.index 
+cd ../templates
+find | sed 's/^\.\///' | grep template$ | sort > guido.index 
+cd ../js
+find | sed 's/^\.\///' | grep js$ | sort > guido.index 
+cd ../..
 
 APP START-UP
 ============
