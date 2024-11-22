@@ -1007,7 +1007,7 @@ guidoTable.prototype.exportXls = function() {
 			window[self.pageControls.export.xls.callback](null, data, self.pageControls.export.xls.filename);
 		else {
 			var blob = new Blob([data], {type: "application/vnd.ms-excel"});
-			saveAs(blob, "table-" + self.id + ".xlsx");
+			guidoSaveAs(blob, "table-" + self.id + ".xlsx");
 		}
  	})
 	.fail(function() {
@@ -1058,9 +1058,10 @@ guidoTable.prototype.exportCsv = function() {
 
 //	var blob = new Blob([dataOut], {type: "text/csv;charset=utf-8"});
 	var blob = new Blob([dataOut], {type: "text/csv"});
-	saveAs(blob, filename);
+	guidoSaveAs(blob, filename);
 };
 
 if (typeof module !== 'undefined' && typeof module.exports !== 'undefined')
     module.exports = guidoTable;
+
 

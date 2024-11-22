@@ -532,3 +532,14 @@ function guidoGetSection() {
 	return guidoRun.current_section;
 };
 
+/**
+ * Save a BLOB as a file
+ */
+function guidoSaveAs(blob, filename) {
+	var tempLink = document.createElement('a');
+	tempLink.setAttribute('href', URL.createObjectURL(blob));
+	tempLink.setAttribute('download', filename);
+	tempLink.click();
+	URL.revokeObjectURL(tempLink.href);
+}
+
