@@ -141,15 +141,17 @@ guidoForm.prototype.validate = function () {
 
 	// Check if external validator was supplied and call it
 	// NB! The external validator for the full form must return FALSE if everything passed! Every TRUE value will be considered failure and will be passed back to the callback as error!
-	if (typeof this.validator.validate == 'function') {
-		error = this.validator.validate(this);
-		if (error)
-			return this.callback(error, null);
-		else
-			return this.callback(null, this.getFormData());
+	if (this.validator.enabled) {
+		if (typeof this.validator.validate == 'function') {
+			error = this.validator.validate(this);
+			if (error)
+				return this.callback(error, null);
+			else
+				return this.callback(null, this.getFormData());
+		}
 	}
 
-	// NB! Re-read the form data values since the validator may have converted them (int to string, for esample)
+	// NB! Re-read the form data values since the validator may have converted them (int to string, for example)
 	return this.callback(null, this.getFormData());
 };
 
@@ -164,7 +166,7 @@ guidoForm.prototype._validate = function (field) {
 	if (field.value.trim)
 		field.value = field.value.trim();
 
-	// In order to valudate, we need a value - but we must allow arithmetic 0
+	// In order to validate, we need a value - but we must allow arithmetic 0
 	if (! field.value && (field.value !== 0))
 		return false;
 
@@ -296,16 +298,22 @@ guidoForm.prototype.readValues = function () {
 						break;
 				}
 
-				// The borwser always return the value as string. 
+				// The browser always return the value as string. 
 				// Check if it is an integer and convert it so (unless we explictily want a string for this field)
 				// Exception: FILE
-				if ((value !== null) && (field.type != 'FILE')) {
-					if (parseFloat(value) == value) {
-						if (! field.getAsString)
+				if ((value !== null) && (field.type != 'FILE') && (! field.getAsString)) {
+					if (Array.isArray(value)) {
+						for (var k=0; k < value.length; k++) {
+							if (parseFloat(value[k]) == value[k])
+								value[k] = parseFloat(value[k]);
+						}
+					}
+					else {
+						if (parseFloat(value) == value)
 							value = parseFloat(value);
 					}
 				}
-console.log(fields[j] + ': ' + value);
+
 				field.value = value;
 			}
 		}
@@ -640,7 +648,6 @@ guidoForm.prototype.renderSelect = function (field) {
 		}
 
 		// Copy the value as attribute if it had been read (e.g., when re-rendering) - or use a default if specified
-console.log(field.order + ': ' + field.value);
 		if (field.value) {
 			// NB: field.value contains the "value" from the field.extra.options array element, and we want the "text" here
 			for (var i=0; i<field.extra.options.length; i++) {

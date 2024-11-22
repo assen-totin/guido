@@ -92,6 +92,7 @@ var guidoTable = function(params, callback) {
 			this.rows[i].css += ' ' + this.cssRows;
 
 		for (var j=0; j < this.rows[i].cells.length; j++) {
+			this.rows[i].cells[j].rowId = this.rows[i].id;
 			if (! this.rows[i].cells[j].hasOwnProperty('id'))
 				this.rows[i].cells[j].id = 'td' + this.uuid4();
 			if (this.cssCells)

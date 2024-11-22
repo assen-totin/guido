@@ -175,10 +175,10 @@ function guidoTranslateDom(locale, element) {
 	});
 }
 
-+/**
-+ * Translate a (muti-line) piece of HTML code
-+ * @param html String The HTML code to translate
-+ */
+/**
+ * Translate a (muti-line) piece of HTML code
+ * @param html String The HTML code to translate
+ */
 function guidoTranslateHtml(html) {
 	var ret = '';
 
