@@ -969,56 +969,6 @@ guidoTable.prototype.exportPrepare = function() {
 };
 
 /**
- * Export to XLS
- */
-guidoTable.prototype.exportXls = function() {
-	this.logger.debug("Entering function exportXls()...");
-
-	if (! this.pageControls.export.xls)
-		return;
-	if (! this.pageControls.export.xls.enabled)
-		return;
-	if (! this.pageControls.export.xls.url)
-		return;
-
-	var data = this.exportPrepare();
-
-	var self = this;
-
-	// Submit to API
-	var jqXHR = $.ajax({
-		type: 'POST',
-		url: this.pageControls.export.xls.url,
-		data: {q: JSON.stringify({data: data})},
-		beforeSend: function (request, settings) {
-			// Prepare to read binary data!
-			settings.xhr().responseType = 'arraybuffer';
-			settings.processData = false;
-			if (typeof self.pageControls.export.xls.beforeSend == 'function')
-				self.pageControls.export.xls.beforeSend(request, settings);
-			if (typeof window[self.pageControls.export.xls.beforeSend] == 'function')
-				window[self.pageControls.export.xls.beforeSend](request, settings);
-		},
-	})
-	.done(function(data) {
-		if (typeof self.pageControls.export.xls.callback == 'function')
-			self.pageControls.export.xls.callback(null, data, self.pageControls.export.xls.filename);
-		else if (typeof window[self.pageControls.export.xls.callback] == 'function')
-			window[self.pageControls.export.xls.callback](null, data, self.pageControls.export.xls.filename);
-		else {
-			var blob = new Blob([data], {type: "application/vnd.ms-excel"});
-			guidoSaveAs(blob, "table-" + self.id + ".xlsx");
-		}
- 	})
-	.fail(function() {
-		if (typeof self.pageControls.export.xls.callback == 'function')
-			self.pageControls.export.xls.callback(jqXHR);
-		else if (typeof window[self.pageControls.export.xls.callback] == 'function')
-			window[self.pageControls.export.xls.callback](jqXHR);
-	});
-};
-
-/**
  * Export to CSV
  */
 guidoTable.prototype.exportCsv = function() {
@@ -1060,6 +1010,31 @@ guidoTable.prototype.exportCsv = function() {
 	var blob = new Blob([dataOut], {type: "text/csv"});
 	guidoSaveAs(blob, filename);
 };
+
+/**
+ * Export to OOXML (XLSX)
+ */
+guidoTable.prototype.exportXls = function() {
+	this.logger.debug("Entering function exportXls()...");
+
+	if (! this.pageControls.export.xls)
+		return;
+	if (! this.pageControls.export.xls.enabled)
+		return;
+
+	var data = this.exportPrepare();
+	var styles = (this.pageControls.export.xls.styles) ? this.pageControls.export.xls.styles : {};
+	var filename = (this.pageControls.export.xls.filename) ? this.pageControls.export.xls.filename : "table-" + this.id + ".xlsx";
+
+	guidoOOXML('xls', data, styles, function(error, result){
+		if (error)
+			return this.logger.error(error);
+
+		var blob = new Blob([new Uint8Array(result)], {type: "application/vnd.ms-excel"});
+		guidoSaveAs(blob, filename);
+	});
+};
+
 
 if (typeof module !== 'undefined' && typeof module.exports !== 'undefined')
     module.exports = guidoTable;

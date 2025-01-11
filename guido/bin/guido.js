@@ -21,8 +21,11 @@
  */
 
 var fs = require('fs');
-var Zip = require('zip');
-var Combine = require('combine');
+
+var Combine = require('./node_modules/combine');
+var Minify = require('./node_modules/minify');
+var Zip = require('../js/zip');
+
 var guidoConf = require('../../app/conf/guido.conf');
 
 // Our index file name
@@ -34,45 +37,67 @@ var base_dir = '';
 // File list array
 var list = [];
 
+// Minify
+var minify = new Minify();
+
 // ZIP file
-var zip = new Zip({prefix:'../../', action:'strip'});
+var zip = new Zip();
 var sync = new guidoSync(function(){
-	zip.writeZip('../../public/guido.zip');
+	var zipped = zip.getArrayBuffer();
+	fs.writeFileSync('../../public/guido.zip', Buffer.from(zipped));
 });
 
-// Walk dirs
-var dirs = ['app/css', 'app/templates', 'app/locale', 'app/js', 'app/fonts', 'guido/fonts'];
-for (var i=0; i<dirs.length; i++) {
-	base_dir = '../../' + dirs[i];
-	list = [];
-	walk(base_dir, list, zip, null);
-	fs.writeFileSync(base_dir + '/' + index_file, formatFile(list));
-}
-
-// Walk APP images
-if (guidoConf.preload_images) {
-	base_dir = '../../app/images';
-	list = [];
-	walk(base_dir, list, zip, null);
-	fs.writeFileSync(base_dir + '/' + index_file, formatFile(list));	
-}
-
-// Walk Guido vendor JS
-base_dir = '../../guido/vendor';
-list = [];
-walk(base_dir, list, zip, null);
-fs.writeFileSync(base_dir + '/' + index_file, formatFile(list));
-
 // Combiner for Guido JS files
-var combiner = new Combine();
-var sync_combiner = new guidoSync(function(){
-	var combined = combiner.getFile();
+var combine = new Combine();
+var sync_combine = new guidoSync(function(){
+	var combined = combine.getBuffer();
 	fs.writeFileSync('../js.min/guido.min.js', combined);
 });
 
-// Walk Guido JS
+// Walk dirs that will be indexed and compressed
+var dirs = ['app/css', 'app/templates', 'app/locale'];
+for (var i=0; i < dirs.length; i++) {
+	base_dir = '../../' + dirs[i];
+	list = [];
+	walk(base_dir, {list:list, zip:zip, combine:null, minify:null, base64:false});
+	fs.writeFileSync(base_dir + '/' + index_file, formatFile(list));
+}
+
+// Walk dirs that will be indexed, base64 and compressed
+var dirs = ['app/fonts', 'guido/fonts'];
+for (var i=0; i < dirs.length; i++) {
+	base_dir = '../../' + dirs[i];
+	list = [];
+	walk(base_dir, {list:list, zip:zip, combine:null, minify:null, base64:true});
+	fs.writeFileSync(base_dir + '/' + index_file, formatFile(list));
+}
+
+// Walk dirs that will be indexed, minified and compressed
+var dirs = ['app/js'];
+for (var i=0; i<dirs.length; i++) {
+	base_dir = '../../' + dirs[i];
+	list = [];
+	walk(base_dir, {list:list, zip:zip, combine:null, minify:minify, base64:false});
+	fs.writeFileSync(base_dir + '/' + index_file, formatFile(list));
+}
+
+// Walk APP images (index and compress)
+if (guidoConf.preload_images) {
+	base_dir = '../../app/images';
+	list = [];
+	walk(base_dir, {list:list, zip:zip, combine:null, minify:null, base64:true});
+	fs.writeFileSync(base_dir + '/' + index_file, formatFile(list));	
+}
+
+// Walk Guido vendor JS (index, minify, compress)
+base_dir = '../../guido/vendor';
+list = [];
+walk(base_dir, {list:list, zip:zip, combine:null, minify:minify, base64:false});
+fs.writeFileSync(base_dir + '/' + index_file, formatFile(list));
+
+// Walk Guido JS (index, minify, combine)
 base_dir = '../../guido/js';
-walk(base_dir, null, null, combiner);
+walk(base_dir, {list:null, zip:null, combine:combine, minify:minify, base64:false});
 
 // Generate the index.min.html from index.html: 
 var indexHtml = fs.readFileSync('../../public/index.html', 'utf8');
@@ -89,10 +114,12 @@ fs.writeFileSync('../../public/index.min.html', indexHtmlMin);
  * Walk a directory, adding its file to the list.
  * @param dir String The directory to walk.
  * @param list Array The list of files to add entries to.
- * @param zip Zip The ZIP object to add each file to. 
- * @param combiner Combiner The Combiner object to add each file to. 
+ * @param zip Zip The ZIP object to add each file to.
+ * @param combine Combine The Combine object to add each file to.
+ * @param minify Minify The Minify object to monify each file.
+ * @param base64 Bool Whether to convert the file to Base64.
  */
-function walk(dir, list, zip, combiner) {
+function walk(dir, options) {
 	var files = fs.readdirSync(dir);
 	for (var i=0; i<files.length; i++) {		
 		// Skip hidden files and directories
@@ -107,28 +134,48 @@ function walk(dir, list, zip, combiner) {
 		var stat = fs.statSync(dir + '/' + files[i]);
 		if (stat.isDirectory()) 
 			// Dive in
-			walk(dir + '/' + files[i], list, zip);
-		else {
-			if (list) {
+			walk(dir + '/' + files[i], options);
+		else if (stat.isFile()) {
+			if (options.list) {
 				var _tmp = dir.replace(base_dir, '') + '/' + files[i];
 				list.push(_tmp.replace(/^\//,''));							
 			}
-			if (zip) {
+
+			// Read the file
+			var fileBufRaw = fs.readFileSync(dir + '/' + files[i]);
+
+			// Minify if requested
+			var fileBufMin = fileBufRaw;
+			if (options.minify) {
+				// Skip files that are already minified
+				if (files[i].indexOf('.min.') < 0)
+					fileBufMin = options.minify.minifyBuffer(fileBufRaw)
+			}
+
+			// Base64 if requested
+			var fileBuf = (options.base64) ? Buffer.from(fileBufMin.toString('base64')) : fileBufMin;
+
+			if (options.combine) {
+				sync_combine.inc();
+				options.combine.addBuffer(fileBuf, function(){
+					sync_combine.dec();
+				});
+			}
+
+			if (options.zip) {
 				sync.inc();
-				zip.addFile(dir + '/' + files[i], function(){
+				var path = dir + '/' + files[i];
+				path = path.replace('../../', '');
+
+				options.zip.addBuffer(fileBuf, path, function(){
 					sync.dec();
 				});
 			}
-			if (combiner) {
-				sync_combiner.inc();
-				combiner.addFile(dir + '/' + files[i], function(){
-					sync_combiner.dec();
-				});
-			}
 		}
+		else
+			console.log('Neither a directory nor a file: ' + dir + '/' + files[i]);
 	}	
 }
-
 
 /**
  * Synchronizing counter object

@@ -114,11 +114,15 @@ function guidoMain() {
 		xhr.open('GET', guidoConf.path + '/guido.zip');
 		xhr.responseType = 'arraybuffer';
 		xhr.onload = function(e) {
-			if (this.status == 200) {
-				var i=0;
-				var files = undefined;
-				var zipfile = new ZipFile(this.response);
-						
+			if (this.status != 200)
+				return sync.dec();
+
+			var i=0;
+			var files = undefined;
+			new guidoUnzip(this.response, function(error, zipfile){
+				if (error)
+					console.log(error);
+
 				// Load Guido vendor JS scripts
 				files = zipfile.findFiles('guido/vendor/');
 				for (i=0; i<files.length; i++) 
@@ -126,8 +130,8 @@ function guidoMain() {
 
 				// Load APP images
 				if (guidoConf.preload_images) {
-			    	files = zipfile.findFiles('app/images/');
-			    	for (i=0; i<files.length; i++) {
+					files = zipfile.findFiles('app/images/');
+					for (i=0; i<files.length; i++) {
 						// Use the image file name as a key
 						files[i] = files[i].replace(/^app\/images\//, '');
 						guidoAttachImage(files[i], zipfile.getFile(files[i]), null);
@@ -142,23 +146,23 @@ function guidoMain() {
 					// We get ArrayBuffer from ZIP, so convert it to string
 					guidoAttachLocale(file_name, guidoAbToUtf8(zipfile.getFile(files[i])), null);	
 				}
-			
+				
 				// Load APP JS scripts
 				files = zipfile.findFiles('app/js/');
 				for (i=0; i<files.length; i++) 
 					guidoAttachJs(files[i], zipfile.getFile(files[i]), null);	
 
 				// Load GUIOD fonts
-		    	files = zipfile.findFiles('guido/fonts/');
-		    	for (i=0; i<files.length; i++) {
+				files = zipfile.findFiles('guido/fonts/');
+				for (i=0; i<files.length; i++) {
 					// Use the image file name as a key
 					files[i] = files[i].replace(/^guido\/fonts\//, '');
 					guidoAttachFont(files[i], zipfile.getFile(files[i]), null);
 				}
 
 				// Load APP fonts
-		    	files = zipfile.findFiles('app/fonts/');
-		    	for (i=0; i<files.length; i++) {
+				files = zipfile.findFiles('app/fonts/');
+				for (i=0; i<files.length; i++) {
 					// Use the image file name as a key
 					files[i] = files[i].replace(/^app\/fonts\//, '');
 					guidoAttachFont(files[i], zipfile.getFile(files[i]), null);
@@ -181,7 +185,7 @@ function guidoMain() {
 				}
 			
 				sync.dec();
-			}
+			});
 		};
 
 		xhr.send();
