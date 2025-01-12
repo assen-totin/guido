@@ -315,12 +315,13 @@ var guidoOOXML = function (type, data, styles, callback) {
 			sst.children.push(si);
 		}
 
-		// Rows
+		// Rows: strip any HTML/XML tags that might be in the value
+		var re = /<.+?>/g;
 		for (var i=0; i < data.rows.length; i++) {
 			for (var j=0; j < data.rows[i].length; j++) {
 				count ++;
 				var si = new xmlElement('si');
-				var t = new xmlElement('t', data.rows[i][j]);
+				var t = new xmlElement('t', data.rows[i][j].replaceAll(re, ''));
 				si.children.push(t);
 				sst.children.push(si);
 			}
