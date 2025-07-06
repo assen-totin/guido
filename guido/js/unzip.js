@@ -79,10 +79,24 @@ function guidoUnzip(array_buffer, callback) {
 			new DecompressionStream("deflate-raw")
 		);
 
-		for await (const chunk of decompressedStream) {
-			length += chunk.length;
-			chunks.push(chunk);
+		// MacOS / iOS do not implement byte streams
+		//for await (const chunk of decompressedStream) {
+		//	length += chunk.length;
+		//	chunks.push(chunk);
+		//}
+		const reader = decompressedStream.getReader();
+		var done = false;
+		while (! done) {
+			const readResult = await reader.read();
+			if (readResult.done)
+				done = true;
+			const chunk = readResult.value;
+			if (chunk) {
+				length += chunk.length;
+				chunks.push(chunk);
+			}
 		}
+		reader.releaseLock();
 
 		var decompressed = new Uint8Array(length);
 		decompressed.set(chunks[0]);
