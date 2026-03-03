@@ -258,9 +258,14 @@ function guidoLoadLayout(layout, section, skipHistory) {
 
 	if (doSection) {
 		// Call per-section APP unloading function
-		var app_func_unload_section = 'appUnloadSection_' + guidoRun.current_section;
+		var app_func_unload_section = 'appUnloadSection_' + guidoRun.current_layout + '_'+ guidoRun.current_section;
 		if (typeof window[app_func_unload_section] == 'function')
 			window[app_func_unload_section]();
+
+		// Call per-section common unloading function in this layout
+		var app_func_unload_section2 = 'appUnloadSection_' + guidoRun.current_layout;
+		if (typeof window[app_func_unload_section2] == 'function')
+			window[app_func_unload_section2]();
 
 		// Call per-section common unloading function
 		var app_func_unload_section_common = 'appUnloadSection';
@@ -314,9 +319,14 @@ function guidoLoadLayout(layout, section, skipHistory) {
 			window[app_func_load_section_common]();
 
 		// Call per-section APP loading function
-		var app_func_load_section = 'appLoadSection_' + section;
+		var app_func_load_section = 'appLoadSection_' + layout;
 		if (typeof window[app_func_load_section] == 'function')
 			window[app_func_load_section]();
+
+		// Call per-layout section APP loading function
+		var app_func_load_section2 = 'appLoadSection_' + layout + '_' + section;
+		if (typeof window[app_func_load_section2] == 'function')
+			window[app_func_load_section2]();
 	}
 
 	// Load the templates recursively starting from the BODY tag
@@ -345,9 +355,14 @@ function guidoLoadSection(section, skipHistory) {
 
 	if (guidoRun.current_section && (guidoRun.current_section !== section)) {
 		// Call per-section APP unloading function
-		var app_func_unload_section = 'appUnloadSection_' + guidoRun.current_section;
+		var app_func_unload_section = 'appUnloadSection_' + guidoRun.current_layout + '_'+ guidoRun.current_section;
 		if (typeof window[app_func_unload_section] == 'function')
 			window[app_func_unload_section]();
+
+		// Call per-section common unloading function in this layout
+		var app_func_unload_section2 = 'appUnloadSection_' + guidoRun.current_layout;
+		if (typeof window[app_func_unload_section2] == 'function')
+			window[app_func_unload_section2]();
 
 		// Call per-section common unloading function
 		var app_func_unload_section_common = 'appUnloadSection';
@@ -372,9 +387,14 @@ function guidoLoadSection(section, skipHistory) {
 			window[app_func_load_section_common]();
 
 		// Call per-section APP loading function
-		var app_func_load_section = 'appLoadSection_' + section;
+		var app_func_load_section = 'appLoadSection_' + guidoRun.current_layout;
 		if (typeof window[app_func_load_section] == 'function')
 			window[app_func_load_section]();
+
+		// Call per-layout section APP loading function
+		var app_func_load_section2 = 'appLoadSection_' + guidoRun.current_layout + '_' + section;
+		if (typeof window[app_func_load_section2] == 'function')
+			window[app_func_load_section2]();
 	}
 
 	// Load the templates recursively starting from the BODY tag
