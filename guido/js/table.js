@@ -259,16 +259,22 @@ guidoTable.prototype.render = function (div) {
 				if (! this.header.cells[i].filter.enabled)
 					continue;
 
-				if (this.header.cells[i].filter.mode == 'text') {
-					// Set listeners on the filter for the Enter key in input field
-					$('#' + this.header.cells[i].filter.id).off('keydown');
-					$('#' + this.header.cells[i].filter.id).on('keydown', this.captureEnter);
-				}
-
-				if (this.header.cells[i].filter.mode == 'image') {
-					// Set listeners on the icons for a click
-					$('#' + this.header.cells[i].filter.id).off('click');
-					$('#' + this.header.cells[i].filter.id).on('click', this.captureClick);
+				switch(this.header.cells[i].filter.mode) {
+					case 'text':
+						// Set listeners on the filter for the Enter key in input field
+						$('#' + this.header.cells[i].filter.id).off('keydown');
+						$('#' + this.header.cells[i].filter.id).on('keydown', this.captureEnter);
+						break;
+					case 'select':
+						// Set listeners on the SELECT for the change of value
+						$('#' + this.header.cells[i].filter.id).off('change');
+						$('#' + this.header.cells[i].filter.id).on('change', this.captureChange);
+						break;
+					case 'image':
+						// Set listeners on the icons for a click
+						$('#' + this.header.cells[i].filter.id).off('click');
+						$('#' + this.header.cells[i].filter.id).on('click', this.captureClick);
+						break;
 				}
 			}
 		}
@@ -328,10 +334,33 @@ guidoTable.prototype.renderHeader = function () {
 		for (var i=0; i < this.header.cells.length; i++) {
 			if (this.header.cells[i].filter.enabled) {
 				html += '<td ' + this.cssHtml(this.filter.css) + '>';
-				if (this.header.cells[i].filter.mode == 'text')
-					html += '<input id=' + this.header.cells[i].filter.id +	' type=text value="' + this.header.cells[i].filter.value + '"' + this.cssHtml(this.header.cells[i].filter.css) + ' table_id="' + this.id + '">';
-				else if (this.header.cells[i].filter.mode == 'image')
-					html += '<span ' + this.cssHtml(this.header.cells[i].filter.css) + '><a href=javascript:void(0)><img id=' + this.header.cells[i].filter.id + ' src=# class="' + this.header.cells[i].filter.image + '" title="' + this.header.cells[i].filter.title + '" table_id="' + this.id + '"></a></span>';
+				switch(this.header.cells[i].filter.mode) {
+					case 'text':
+						html += '<input id=' + this.header.cells[i].filter.id +	' type=text value="' + this.header.cells[i].filter.value + '"' + this.cssHtml(this.header.cells[i].filter.css) + ' table_id="' + this.id + '">';
+						break;
+					case 'select':
+						html += '<select id=' + this.header.cells[i].filter.id + ' ' +  this.cssHtml(this.header.cells[i].filter.css) + ' table_id="' + this.id + '">';
+						// Show select if filter not applied yet
+						if (! this.header.cells[i].filter.value)
+							html += '<option value=undef>-- select --</option>';
+
+						// Get all unique values from this column and populate SELECT
+						var unique = [];
+						for (var j=0; j < this.rows.length - 1; j++) {
+							if (unique.indexOf(this.rows[j].cells[i].content) < 0) {
+								unique.push(this.rows[j].cells[i].content);
+								html += '<option value="' + this.rows[j].cells[i].content + '"';
+								if (this.header.cells[i].filter.value == this.rows[j].cells[i].content)
+									html += ' selected';
+								html += '>' + this.rows[j].cells[i].content + '</option>';
+							}
+						}
+						html += '</select>';
+						break;
+					case 'image':
+						html += '<span ' + this.cssHtml(this.header.cells[i].filter.css) + '><a href=javascript:void(0)><img id=' + this.header.cells[i].filter.id + ' src=# class="' + this.header.cells[i].filter.image + '" title="' + this.header.cells[i].filter.title + '" table_id="' + this.id + '"></a></span>';
+						break;
+				}
 				html += '</td>';
 			}
 			else
@@ -809,7 +838,16 @@ guidoTable.prototype.filterRun = function() {
 	// Read filter
 	for (var i=0; i < this.header.cells.length; i++) {
 		if (this.header.cells[i].filter.enabled) {
-			this.header.cells[i].filter.value = document.getElementById(this.header.cells[i].filter.id).value;
+			var f = document.getElementById(this.header.cells[i].filter.id);
+			switch(this.header.cells[i].filter.mode) {
+				case 'text':
+					this.header.cells[i].filter.value = f.value;
+					break;
+				case 'select':
+					this.header.cells[i].filter.value = f.options[f.selectedIndex].value;
+					break;
+				// NB: Filers with mode 'image' do not filter anyhting, but invoke actions when clicked
+			}
 			if (this.header.cells[i].filter.value)
 				this.header.cells[i].filter.value = this.header.cells[i].filter.value.trim();
 		}
@@ -820,14 +858,20 @@ guidoTable.prototype.filterRun = function() {
 	// Apply saved filter
 	for (var i=0; i < this.rows.length; i++) {
 		this.rows[i].enabled = true;
-		for(j=0; j < this.header.cells.length; j++) {
+		for (j=0; j < this.header.cells.length; j++) {
 			if (! this.header.cells[j].filter.value)
 				continue;
 
-			if (this.rows[i].cells[j].content.toString().toLowerCase().indexOf(this.header.cells[j].filter.value.toString().toLowerCase()) < 0) {
-				this.rows[i].enabled = false;
-				break;
-			}	
+			switch(this.header.cells[j].filter.mode) {
+				case 'text':
+					if (this.rows[i].cells[j].content.toString().toLowerCase().indexOf(this.header.cells[j].filter.value.toString().toLowerCase()) < 0)
+						this.rows[i].enabled = false;
+					break;
+				case 'select':
+					if (this.rows[i].cells[j].content.toString().toLowerCase() != this.header.cells[j].filter.value.toString().toLowerCase())
+						this.rows[i].enabled = false;
+					break;
+			}
 		}
 	}
 
@@ -912,6 +956,17 @@ guidoTable.prototype.captureEnter = function(event) {
 	var tableId = $(event.target).attr('table_id');
 	appRun.tables[tableId].filterRun();
 };
+
+/**
+ * Capture change of value for filter
+ */
+
+guidoTable.prototype.captureChange = function(event) {
+	event.preventDefault();
+
+	var tableId = $(event.target).attr('table_id');
+ 	appRun.tables[tableId].filterRun();
+ };
 
 /**
  * Capture mouse click for filter
@@ -1035,8 +1090,6 @@ guidoTable.prototype.exportXls = function() {
 	});
 };
 
-
 if (typeof module !== 'undefined' && typeof module.exports !== 'undefined')
     module.exports = guidoTable;
-
 
