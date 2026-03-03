@@ -449,7 +449,7 @@ guidoTable.prototype.renderCell = function (cell, columnId, isHeader) {
 			html += (cell.ellipse) ? cell.ellipse : ' more...';
 			html += '</a>';
 		}
-		else if (cell.content)
+		else if (cell.hasOwnProperty('content'))
 			html += cell.content;
 	}
 
@@ -965,8 +965,8 @@ guidoTable.prototype.captureChange = function(event) {
 	event.preventDefault();
 
 	var tableId = $(event.target).attr('table_id');
- 	appRun.tables[tableId].filterRun();
- };
+	appRun.tables[tableId].filterRun();
+};
 
 /**
  * Capture mouse click for filter
