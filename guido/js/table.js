@@ -342,7 +342,7 @@ guidoTable.prototype.renderHeader = function () {
 						html += '<select id=' + this.header.cells[i].filter.id + ' ' +  this.cssHtml(this.header.cells[i].filter.css) + ' table_id="' + this.id + '">';
 						// Show select if filter not applied yet
 						if (! this.header.cells[i].filter.value)
-							html += '<option value=undef>-- select --</option>';
+							html += '<option value=GUIDO_FALSE>-- select --</option>';
 
 						// Get all unique values from this column and populate SELECT
 						var unique = [];
@@ -844,7 +844,9 @@ guidoTable.prototype.filterRun = function() {
 					this.header.cells[i].filter.value = f.value;
 					break;
 				case 'select':
-					this.header.cells[i].filter.value = f.options[f.selectedIndex].value;
+					var v = f.options[f.selectedIndex].value;
+					if (v != 'GUIDO_FALSE')
+						this.header.cells[i].filter.value = v;
 					break;
 				// NB: Filers with mode 'image' do not filter anyhting, but invoke actions when clicked
 			}
