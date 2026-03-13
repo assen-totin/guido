@@ -473,7 +473,7 @@ function guidoFormGetFile(event) {
  */
 function guidoMatchIpv4(ip) {
         // Check for single IPv4
-        var re = /(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/;
+        var re = /^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/;
         if (ip.match(re))
                 return true;
         return false;
