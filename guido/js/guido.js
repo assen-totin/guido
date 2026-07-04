@@ -51,6 +51,9 @@ guidoRun.forms = {};
 // Init firtst run marker
 guidoRun.first_run = true;
 
+// Init redirect/reload
+guidoRun.f5 = null;
+
 /**
  * Main entry point
  * Will be invoked once on application's load.
@@ -82,16 +85,8 @@ function guidoMain() {
 	for (var layout in guidoConf.layouts) 
 		guidoRun.templates[layout] = {};
 	
-	// If an F5 cookie was supplied, read and process its value; override defaults
-	var f5 = guidoGetLayoutAndSection(guidoGetCookie(guidoConf.cookie_f5));
-	if (f5[0] != null) {
-		guidoRun.current_layout = f5[0];
-		guidoDelCookie(guidoConf.cookie_f5);
-		if (f5[1] != null)
-			guidoRun.current_section = f5[1];
-		else
-			guidoRun.current_section = guidoConf.layouts[guidoRun.current_layout]._section;
-	}
+	// If an F5 cookie was supplied, read and process its value
+	guidoRun.f5 = guidoGetLayoutAndSection(guidoGetCookie(guidoConf.cookie_f5));
 	
 	// Create sync object which will load the default layout and run the APP Main() function
 	var sync = new guidoSync(function() {

@@ -104,8 +104,13 @@ function guidoDelCookie(name) {
  */
 
 function guidoGetLayoutAndSection(location) {
-	var layout = null;
-	var section = null;
+	if (! location)
+		return null;
+
+	var ret = {
+		layout: null, 
+		section: null
+	};
 
 	// Remove any path if such is specified inc onfig
 	var updated = location.replace(guidoConf.path, '');
@@ -114,14 +119,18 @@ function guidoGetLayoutAndSection(location) {
 		var parts = updated.split("/");
 
 		// Is parts[1] a valid layout?
-		if ((typeof parts[1] !== 'undefined') && (typeof guidoConf.layouts[parts[1]] !== 'undefined'))
-			layout = parts[1];
+		if ((typeof parts[1] !== 'undefined') && (typeof guidoConf.layouts[parts[1]] !== 'undefined')) {
+			ret.layout = parts[1];
 
-		// Is parts[2] a valid section?
-		if (layout && (typeof parts[2] !== 'undefined') && (typeof guidoConf.layouts[layout][parts[2]] !== 'undefined'))
-			section = parts[2];
+			// Is parts[2] a valid section?
+			if ((typeof parts[2] !== 'undefined') && (typeof guidoConf.layouts[parts[1]][parts[2]] !== 'undefined'))
+				ret.section = parts[2];
+			else
+				ret.secton = guidoConf.layouts[ret.layout]._section;
+		}
 	}
-	return [layout, section];
+
+	return (ret.layout) ? ret : null;
 }
 
 

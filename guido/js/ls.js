@@ -43,22 +43,19 @@ function guidoLsGet(key) {
 
 
 /**
- * Save current state (appRun object) in the Local Storage of the browser.
+ * Save current state (appState object) in the Local Storage of the browser.
  */
 function guidoLsSave() {
-	if(typeof(Storage) !== "undefined") {
-		var newState = {};
-		guidoDeepCopyObject(appRun, newState, true);
-		localStorage.setItem(guidoConf.ls + "__state", JSON.stringify(newState));
-	}
+	if(typeof(Storage) !== "undefined")
+		localStorage.setItem(guidoConf.ls + "__state", JSON.stringify(appState));
 }
 
 
 /**
- * Load state (appRun object) from the Local Storage of the browser.
+ * Load state (appState object) from the Local Storage of the browser.
  */
 function guidoLsLoad(key, value) {
-	var restore = true;
+	var apply = true;
 
 	if(typeof(Storage) === "undefined")
 		return;
@@ -67,26 +64,26 @@ function guidoLsLoad(key, value) {
 	if (! state)
 		return;
 
-	var savedState = JSON.parse(state);
+	var restored = JSON.parse(state);
 
 	// Only restore the runtime object if the value of the supplied key inside it matches the supplied value			
 	if (key) {
 		if (typeof key === "object" && key.constructor == Object)
-			restore = guidoCheckProperty(key, savedState);
+			apply = guidoCheckProperty(key, restored);
 		else {
-			if (savedState[key] == value)
-				restore = true;
+			if (restored[key] == value)
+				apply = true;
 			else
-				restore = false;
+				apply = false;
 		}
 	}
 
-	if (restore)
-		guidoDeepCopyObject(savedState, appRun, true);
+	if (apply)
+		appState = restored;
 }
 
 /**
- * Clear state (appRun object) from the Local Storage of the browser.
+ * Clear state (appState object) from the Local Storage of the browser.
  */
 function guidoLsClear() {
 	if(typeof(Storage) !== "undefined") {

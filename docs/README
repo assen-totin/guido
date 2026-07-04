@@ -456,7 +456,7 @@ To disable localisation, just set the locale in guido.conf to empty string.
 STATE AND LOCAL STORAGE
 =======================
 
-The state in Guido is represented by the appRun object. It is initialised when Guido starts and is globally available. You can use it as a storage for data which needs to persist between sections. 
+The preserved state in Guido is represented by the appState object. It is initialised when Guido starts and is globally available. You can use it as a storage for data which needs to persist between sections. 
 
 Guild has several helper functions to work with the state object: 
 - guidoLsSave() will save the state object to the browser's Local Storage. Functions you may have in the state object will be skipped.
