@@ -541,7 +541,7 @@ guidoForm.prototype.renderInput = function (field) {
 	var cssInput = this.cssHtml(this.asArray(field.cssInput));
 
 	// Specials for password fields
-	if (field.attributes.type == 'password') {
+	//if (field.attributes.type == 'password') {
 		// Attach "show password" button
 		if (field.extra && field.extra.toggle && field.extra.toggle.enabled) {
 			var cssEye = this.cssHtml(this.asArray(field.extra.toggle.cssInput));
@@ -555,7 +555,7 @@ guidoForm.prototype.renderInput = function (field) {
 			var cssButton = this.cssHtml(this.asArray(field.generator.cssInput));
 			html += ' <span ' + cssButton + '> <button type=button onClick="appRun.forms.' + this.id + '.generatePassword(\'' + field.attributes.id + '\', \'' + field.id + '\')">' + _("Generate") + '</button></span>';
 		}
-	}
+	//}
 
 	// Multi-field INPUTs
 	if (field.multiField) {
